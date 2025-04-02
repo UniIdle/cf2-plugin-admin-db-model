@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.io.IOException;
 import org.hibernate.Session;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import ru.g4.utils.resources.IResourceBundleWrapper;
 import ru.g4.utils.resources.ResourceBundleHandlerWrapper;
@@ -18,17 +18,6 @@ import ru.rtec.cf2.plugin.modeladmindb.util.SQLScriptReader;
 
 
 public class AdminDBModelRepository implements IAdminDBModelRepository {
-	private final List<String> necessuryDBObjects = Arrays.asList(
-			"cf2_object_access_controller_role", 
-			"cf2_reference_editor_role", 
-			"cf2_function_access_controller_role", 
-			"users_access_map", 
-			"cf2_object_editor_role",
-			"cf2_base_user",
-			"check_access",
-			"define_root_id"
-		);
-
 	/**
 	 * Логер
 	 */
@@ -37,7 +26,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	/**
 	 * Обертка для ResourceBundle
 	 */
-	private IResourceBundleWrapper resourceBundleWrapper = new ResourceBundleHandlerWrapper(
+	private static IResourceBundleWrapper resourceBundleWrapper = new ResourceBundleHandlerWrapper(
 			IAdminDBModel.class.getPackage().getName() + ".resources.resource");
 
 	/**
@@ -62,25 +51,15 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 		this.dbModel = dbModel;
 	}
 
-	@Override
-	public boolean isValidSchema() {
-		Boolean result = true;
+	private <T> Object executeQueryShell(String script, Function<ResultSet, T> handleResultSet) {
 		Session session = dbModel.getSession();
 		Connection connection = session.connection();
 
 		try {
 			Statement stmt = connection.createStatement();
-			String query = reader.performScript("check_db.sql");
+			String query = reader.performScript(script);
 			ResultSet rs = stmt.executeQuery(query);
-
-			while(rs.next()) {
-				if (!necessuryDBObjects.contains(rs.getString(1))) {
-					result = false;
-					log.info(resourceBundleWrapper.getString("AdminDBModelRepository_UncorrectAdministrationDB"));
-					break;
-				};
-			};
-
+			return handleResultSet.apply(rs);
 		} catch (IOException e) {
 			log.warning(e.getMessage());
 		} catch (SQLException e) {
@@ -93,127 +72,61 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 			}
 		}
 
-		return result;
+		return null;
+	}
+
+	private void executeUpdateShell(String script, UnaryOperator<String> handleResultSet) throws SQLException{
+		Session session = dbModel.getSession();
+		Connection connection = session.connection();
+
+		try {
+			Statement stmt = connection.createStatement();
+			String query = reader.performScript(script);
+			query = handleResultSet.apply(query);
+			stmt.executeUpdate(query);
+		} catch (IOException e) {
+			log.warning(e.getMessage());
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				log.warning(e.getMessage());
+			}
+		}
 	}
 
 	@Override
+	public boolean isValidSchema() {
+		return (boolean) executeQueryShell("check_db.sql", HandleResultSetFunctionFactory.getValidSchemaFunction());
+	}
+
+
+	@Override
 	public boolean isAccessController() {
-		Boolean result = false;
-		ResultSet rs;
-		Session session = dbModel.getSession();
-		Connection connection = session.connection();
-
-		try {
-			Statement stmt = connection.createStatement();
-			String query = reader.performScript("check_access_controller.sql");
-			rs = stmt.executeQuery(query);
-
-			rs.next();
-			result = rs.getBoolean(1);
-			log.info(resourceBundleWrapper.getString("AdminDBModelRepository_AdministratorUser") + result.toString());
-		} catch (IOException e) {
-			log.warning(e.getMessage());
-		} catch (SQLException e) {
-			log.warning(e.getMessage());
-		} finally {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				log.warning(e.getMessage());
-			}
-		}
-
-		return result;
+		return (boolean) executeQueryShell("check_access_controller.sql", HandleResultSetFunctionFactory.getIsAccessControllerFunction());
 	}
 
 	@Override
 	public List<String> requestAllUsers() {
-		List<String> result = new ArrayList<>();
-		Session session = dbModel.getSession();
-		Connection connection = session.connection();
-
-		try {
-			Statement stmt = connection.createStatement();
-			String query = reader.performScript("get_all_users.sql");
-			ResultSet rs = stmt.executeQuery(query);
-
-			while(rs.next()) {
-				String userName = rs.getString(1);
-				result.add(userName);
-			}
-		} catch (IOException e) {
-			log.warning(e.getMessage());
-		} catch (SQLException e) {
-			log.warning(e.getMessage());
-		} finally {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				log.warning(e.getMessage());
-			}
-		}
-
-		return result;
+		return (List<String>) executeQueryShell("get_all_users.sql", HandleResultSetFunctionFactory.getRequestAllUsersFunction());
 	}
 
 	@Override
 	public void deleteUserByName(String userName) throws SQLException {
-		Session session = dbModel.getSession();
-		Connection connection = session.connection();
-
-		try {
-			Statement stmt = connection.createStatement();
-			String query = reader.performScript("delete_user.sql");
-			stmt.executeUpdate(String.format(query, userName));
-		} catch (IOException e) {
-			log.warning(e.getMessage());
-		} finally {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				log.warning(e.getMessage());
-			}
-		}
+		executeUpdateShell("delete_user.sql", HandleResultSetFunctionFactory.getDeleteUserFunction(userName));
+		log.info(String.format(resourceBundleWrapper.getString("SuccessDeleteUser_Message"), userName));
 	}
 
 	@Override
 	public void changeUserPassword(String userName, String newPassword) throws SQLException {
-		Session session = dbModel.getSession();
-		Connection connection = session.connection();
-
-		try {
-			Statement stmt = connection.createStatement();
-			String query = reader.performScript("change_pass.sql");
-			stmt.executeUpdate(String.format(query, userName, newPassword));
-		} catch (IOException err) {
-			log.warning(err.getMessage());
-		} finally {
-			try {
-				connection.close();
-			} catch (SQLException err) {
-				log.warning(err.getMessage());
-			}
-		}
+		executeUpdateShell("change_pass.sql", HandleResultSetFunctionFactory.getChangeUserPasswordFunction(userName, newPassword));
+		log.info(String.format(resourceBundleWrapper.getString("SuccessEditUser_Message"), userName));
 	}
 
 	@Override
 	public void createUser(String userName, String password) throws SQLException {
-		Session session = dbModel.getSession();
-		Connection connection = session.connection();
-
-		try {
-			Statement stmt = connection.createStatement();
-			String query = reader.performScript("create_user.sql");
-			stmt.executeUpdate(String.format(query, userName, password));
-		} catch (IOException err) {
-			log.warning(err.getMessage());
-		} finally {
-			try {
-				connection.close();
-			} catch (SQLException err) {
-				log.warning(err.getMessage());
-			}
-		}
+		executeUpdateShell("create_user.sql", HandleResultSetFunctionFactory.getCreateUserFunction(userName, password));
+		log.info(String.format(resourceBundleWrapper.getString("SuccessCreateUser_Message"), userName));
 	}
 	
 }
