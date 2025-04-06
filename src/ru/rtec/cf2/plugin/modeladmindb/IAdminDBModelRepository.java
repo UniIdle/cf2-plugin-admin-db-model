@@ -62,4 +62,11 @@ public interface IAdminDBModelRepository {
 	 * @param password пароль
 	 */
 	public void createUser(String userName, String password) throws SQLException;
+
+	/**
+	 * Получает все роли к которым принадлежит пользователь
+	 * 
+	 * @param userName имя пользователя
+	 */
+	public List<String> getUserRoles(String userName);
 }

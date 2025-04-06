@@ -81,8 +81,7 @@ public class HandleResultSetFunctionFactory {
 			List<String> result = new ArrayList<>();
 			try {
 				while(rs.next()) {
-					String userName = rs.getString(1);
-					result.add(userName);
+					result.add(rs.getString(1));
 				}
 				return result;
 			} catch (SQLException e) {
@@ -110,6 +109,21 @@ public class HandleResultSetFunctionFactory {
 		return (query) -> {
 			String result = String.format(query, userName, password);
 			return result;
+		};
+	}
+
+	public static Function<ResultSet, List<String>> getUserRolesFunction() {
+		return (rs) -> {
+			List<String> result = new ArrayList<>();
+			try {
+				while(rs.next()) {
+					result.add(rs.getString(1));
+				}
+				return result;
+			} catch (SQLException e) {
+				log.info(e.getMessage());
+				return result;
+			}
 		};
 	}
 

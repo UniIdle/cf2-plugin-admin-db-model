@@ -128,5 +128,10 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 		executeUpdateShell("create_user.sql", HandleResultSetFunctionFactory.getCreateUserFunction(userName, password));
 		log.info(String.format(resourceBundleWrapper.getString("SuccessCreateUser_Message"), userName));
 	}
+
+	@Override
+	public List<String> getUserRoles(String userName) {
+		return (List<String>) executeQueryShell("get_user_roles.sql", HandleResultSetFunctionFactory.getUserRolesFunction());
+	}
 	
 }

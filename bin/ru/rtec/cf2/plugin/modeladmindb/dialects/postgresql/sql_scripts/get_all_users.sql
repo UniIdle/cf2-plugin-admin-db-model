@@ -8,12 +8,11 @@ WITH RECURSIVE rec AS (
 		FROM pg_roles 
 		WHERE rolname = 'cf2_base_user_role' 
 	)
-
 	UNION 
 	SELECT m.roleid, m.member 
 	FROM pg_auth_members AS m 
 	JOIN rec ON rec.member = m.roleid 
-) SELECT u.usename 
+) SELECT DISTINCT(u.usename) 
 	FROM pg_roles r 
 	JOIN rec AS m ON r.oid = m.roleid 
 	JOIN pg_user u ON u.usesysid = m.member 
