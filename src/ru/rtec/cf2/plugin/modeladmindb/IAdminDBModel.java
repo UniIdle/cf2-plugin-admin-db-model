@@ -2,6 +2,11 @@ package ru.rtec.cf2.plugin.modeladmindb;
 
 import ru.rtec.cf2.plugin.model.objects.IConnectionStateListener;
 
+
+/**
+ * Интерфейс для работы с ролевым доступом к объектам конфигуратора
+ * 
+ */
 public interface IAdminDBModel {
 	/**
 	 * Получает объект репозитория который будет выполнять запросы к БД

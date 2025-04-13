@@ -4,14 +4,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 import ru.g4.utils.resources.IResourceBundleWrapper;
 import ru.g4.utils.resources.ResourceBundleHandlerWrapper;
 
+
+/**
+ * Фабрика функций для обработки ResultSet
+ * 
+ */
 public class HandleResultSetFunctionFactory {
 	private static final List<String> necessuryDBObjects = Arrays.asList(
 		"cf2_object_access_controller_role", 
@@ -76,7 +82,7 @@ public class HandleResultSetFunctionFactory {
 		};
 	}
 
-	public static Function<ResultSet, List<String>> getRequestAllUsersFunction() {
+	public static Function<ResultSet, List<String>> getStringListResultFunction() {
 		return (rs) -> {
 			List<String> result = new ArrayList<>();
 			try {
@@ -91,33 +97,12 @@ public class HandleResultSetFunctionFactory {
 		};
 	}
 
-	public static UnaryOperator<String> getDeleteUserFunction(String userName) {
-		return (query) -> {
-			String result = String.format(query, userName);
-			return result;
-		};
-	}
-
-	public static UnaryOperator<String> getChangeUserPasswordFunction(String userName, String newPassword) {
-		return (query) -> {
-			String result = String.format(query, userName, newPassword);
-			return result;
-		};
-	}
-
-	public static UnaryOperator<String> getCreateUserFunction(String userName, String password) {
-		return (query) -> {
-			String result = String.format(query, userName, password);
-			return result;
-		};
-	}
-
-	public static Function<ResultSet, List<String>> getUserRolesFunction() {
+	public static Function<ResultSet, Map<Integer, String>> getIntegerStringMapResultFunction() {
 		return (rs) -> {
-			List<String> result = new ArrayList<>();
+			Map<Integer, String> result = new HashMap<>();
 			try {
 				while(rs.next()) {
-					result.add(rs.getString(1));
+					result.put(rs.getInt(1), rs.getString(2));
 				}
 				return result;
 			} catch (SQLException e) {

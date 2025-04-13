@@ -2,8 +2,14 @@ package ru.rtec.cf2.plugin.modeladmindb;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
 
+
+/**
+ * Интерфейс для работы с ролевым доступом к объектам конфигуратора
+ * 
+ */
 public interface IAdminDBModelRepository {
 	/**
 	 * Устанавливает объектную модель текущей БД
@@ -69,4 +75,52 @@ public interface IAdminDBModelRepository {
 	 * @param userName имя пользователя
 	 */
 	public List<String> getUserRoles(String userName);
+
+	/**
+	 * Устанавливает для пользователя членство в указанной роли
+	 * 
+	 * @param privilege имя групповой роли
+	 * @param userName имя пользователя
+	 */
+	public void grantPrivilege(String privilege, String userName);
+
+	/**
+	 * Исключает пользователя из групповой роли
+	 * 
+	 * @param privilege имя групповой роли
+	 * @param userName имя пользователя
+	 */
+	public void revokePrivilege(String privilege, String userName);
+
+	/**
+	 * Получение имен всех объектов
+	 * 
+	 * @return список имен объектов
+	 */
+	public Map<Integer, String> getAllObjects();
+
+	/**
+	 * Получение имен доступных объектов
+	 * 
+	 * @param userName имя пользователя
+	 * @return список имен объектов
+	 */
+	public Map<Integer, String> getAccessObjects(String userName);
+
+	/**
+	 * Назначение привилегий на объект для пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param objectId ID объекта
+	 */
+	public void grantAccessToObject(String userName, int objectId);
+
+	/**
+	 * Удаление привилегии на объект для пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param objectId ID объекта
+	 */
+	public void revokeAccessFromObject(String userName, int objectId);
+
 }

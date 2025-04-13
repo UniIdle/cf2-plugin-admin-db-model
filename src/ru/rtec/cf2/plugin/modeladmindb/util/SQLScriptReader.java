@@ -4,6 +4,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
+
+/**
+ * Класс для чтения SQL-скриптов из файлов
+ * 
+ */
 public class SQLScriptReader {
 	/**
 	 * Путь к SQL-скриптам. Устанавливаеся плагином с определенным типом БД (PostgreSQL/Oracle/MySQL)

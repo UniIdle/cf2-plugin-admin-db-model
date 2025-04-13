@@ -10,6 +10,10 @@ import ru.rtec.cf2.plugin.model.objects.IConnectionStateListener;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
 
 
+/**
+ * Абстрактный класс плагина для работы с ролевым доступом к объектам конфигуратора
+ * 
+ */
 public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICompose, IAdminDBModel {
 	/**
 	 * Обертка для ResourceBundle
