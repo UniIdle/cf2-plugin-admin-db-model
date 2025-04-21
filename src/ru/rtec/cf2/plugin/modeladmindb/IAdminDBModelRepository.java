@@ -1,6 +1,5 @@
 package ru.rtec.cf2.plugin.modeladmindb;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
@@ -37,7 +36,7 @@ public interface IAdminDBModelRepository {
 	 * 
 	 * @return булево значение является ли текущий пользователь админом
 	 */
-	public boolean isAccessController();
+	public List<String> currentUserAdminPrivileges();
 
 	/**
 	 * Возвращает список всех пользователей конфигуратора
@@ -51,7 +50,7 @@ public interface IAdminDBModelRepository {
 	 * 
 	 * @param userName имя пользователя
 	 */
-	public void deleteUserByName(String userName) throws SQLException;
+	public void deleteUserByName(String userName) throws ADBMError;
 
 	/**
 	 * Меняeт пароль для пользователя
@@ -59,7 +58,15 @@ public interface IAdminDBModelRepository {
 	 * @param userName имя пользователя
 	 * @param newPassword новый пароль
 	 */
-	public void changeUserPassword(String userName, String newPassword) throws SQLException;
+	public void changeUserPassword(String userName, String newPassword) throws ADBMError;
+
+	/**
+	 * Меняeт имя пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param newUserName новое имя пользователя
+	 */
+	public void changeUserName(String userName, String newUserName) throws ADBMError;
 
 	/**
 	 * Создает нового пользователя
@@ -67,7 +74,7 @@ public interface IAdminDBModelRepository {
 	 * @param userName имя пользователя
 	 * @param password пароль
 	 */
-	public void createUser(String userName, String password) throws SQLException;
+	public void createUser(String userName, String password) throws ADBMError;
 
 	/**
 	 * Получает все роли к которым принадлежит пользователь
@@ -122,5 +129,12 @@ public interface IAdminDBModelRepository {
 	 * @param objectId ID объекта
 	 */
 	public void revokeAccessFromObject(String userName, int objectId);
+
+	/**
+	 * Удаляет объекты из таблицы users_access_map_table для указанного пользователя
+	 * 
+	 * @param userName имя пользователя
+	 */
+	public void clearUserAccessObjects(String userName);
 
 }

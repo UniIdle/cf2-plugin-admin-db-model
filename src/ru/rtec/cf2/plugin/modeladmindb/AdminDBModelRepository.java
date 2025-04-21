@@ -69,6 +69,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 			log.warning(e.getMessage());
 		} catch (SQLException e) {
 			log.warning(e.getMessage());
+			throw new ADBMError(e.getMessage());
 		} finally {
 			try {
 				connection.close();
@@ -86,8 +87,8 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 	@Override
-	public boolean isAccessController() {
-		return (boolean) queryShell("check_access_controller.sql", HandleResultSetFunctionFactory.getIsAccessControllerFunction());
+	public List<String> currentUserAdminPrivileges() {
+		return (List<String>) queryShell("check_access_controller.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
 	}
 
 	@Override
@@ -96,19 +97,25 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 	@Override
-	public void deleteUserByName(String userName) throws SQLException {
+	public void deleteUserByName(String userName) throws ADBMError {
 		queryShell("delete_user.sql", null, userName);
 		log.info(String.format(resourceBundleWrapper.getString("SuccessDeleteUser_Message"), userName));
 	}
 
 	@Override
-	public void changeUserPassword(String userName, String newPassword) throws SQLException {
+	public void changeUserPassword(String userName, String newPassword) throws ADBMError {
 		queryShell("change_pass.sql",null, userName, newPassword);
-		log.info(String.format(resourceBundleWrapper.getString("SuccessEditUser_Message"), userName, newPassword));
+		log.info(String.format(resourceBundleWrapper.getString("SuccessChangePassowrd_Message"), userName, newPassword));
 	}
 
 	@Override
-	public void createUser(String userName, String password) throws SQLException {
+	public void changeUserName(String userName, String newUserName) throws ADBMError {
+		queryShell("change_username.sql",null, userName, newUserName);
+		log.info(String.format(resourceBundleWrapper.getString("SuccessChangeUsername_Message"), userName, newUserName));
+	}
+
+	@Override
+	public void createUser(String userName, String password) throws ADBMError {
 		queryShell("create_user.sql", null, userName, password);
 		log.info(String.format(resourceBundleWrapper.getString("SuccessCreateUser_Message"), userName, password));
 	}
@@ -148,4 +155,8 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 		queryShell("revoke_access_from_object.sql", null, userName, String.valueOf(objectId));
 	}
 
+	@Override
+	public void clearUserAccessObjects(String userName) {
+		queryShell("clear_access_objects.sql", null, userName);
+	}
 }

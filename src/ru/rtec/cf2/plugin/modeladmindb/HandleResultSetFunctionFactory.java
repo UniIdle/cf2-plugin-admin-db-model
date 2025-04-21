@@ -67,21 +67,6 @@ public class HandleResultSetFunctionFactory {
 		};
 	}
 
-	public static Function<ResultSet, Boolean> getIsAccessControllerFunction() {
-		return (rs) -> {
-			Boolean result = false;
-			try {
-				rs.next();
-				result = rs.getBoolean(1);
-				log.info(resourceBundleWrapper.getString("AdminDBModelRepository_AdministratorUser") + result.toString());
-				return result;
-			} catch (SQLException e) {
-				log.info(e.getMessage());
-				return false;
-			}
-		};
-	}
-
 	public static Function<ResultSet, List<String>> getStringListResultFunction() {
 		return (rs) -> {
 			List<String> result = new ArrayList<>();
