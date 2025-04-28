@@ -86,6 +86,11 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 		return (boolean) queryShell("check_db.sql", HandleResultSetFunctionFactory.getValidSchemaFunction());
 	}
 
+	@Override 
+	public void preprocDbObjects() {
+		queryShell("clear_empty_objects.sql", null);
+	}
+
 	@Override
 	public List<String> currentUserAdminPrivileges() {
 		return (List<String>) queryShell("check_access_controller.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
@@ -94,6 +99,11 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public List<String> requestAllUsers() {
 		return (List<String>) queryShell("get_all_users.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
+	}
+
+	@Override
+	public List<String> requestObjectEditors() {
+		return (List<String>) queryShell("get_object_editors.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
 	}
 
 	@Override

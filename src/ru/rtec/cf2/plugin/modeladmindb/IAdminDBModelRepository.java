@@ -32,6 +32,11 @@ public interface IAdminDBModelRepository {
 	public boolean isValidSchema();
 
 	/**
+	 * Удаляет устаревшние строки из таблицы users_access_map_table
+	 */
+	public void preprocDbObjects();
+
+	/**
 	 * Проверяет полномочия текущего пользователя на управление ролевым доступом
 	 * 
 	 * @return булево значение является ли текущий пользователь админом
@@ -44,6 +49,13 @@ public interface IAdminDBModelRepository {
 	 * @return список пользователей
 	 */
 	public List<String> requestAllUsers();
+
+	/**
+	 * Возвращает список пользователей редакторов объектов
+	 * 
+	 * @return редаторы объектов
+	 */
+	public List<String> requestObjectEditors();
 
 	/**
 	 * Удаляет пользователя конфигуратора оп его имени

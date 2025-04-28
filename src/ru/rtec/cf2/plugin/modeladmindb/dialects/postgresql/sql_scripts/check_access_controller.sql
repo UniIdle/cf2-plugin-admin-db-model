@@ -7,4 +7,7 @@ JOIN pg_user u ON u.usesysid = m.member
 WHERE u.usename = current_user and (
 	r.rolname = 'cf2_object_access_controller_role' OR 
 	r.rolname = 'cf2_function_access_controller_role'
-);
+) 
+UNION 
+SELECT 'cf2_owner'
+WHERE current_user = 'cf2_owner';

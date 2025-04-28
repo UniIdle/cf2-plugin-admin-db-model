@@ -20,5 +20,6 @@ WITH RECURSIVE rec AS (
 		SELECT schema_owner 
 		FROM information_schema.schemata 
 		WHERE schema_name = current_schema
-	)
+	) AND
+	u.usename != current_user
 	ORDER BY u.usename;
