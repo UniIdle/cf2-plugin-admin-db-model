@@ -1,0 +1,182 @@
+package ru.rtec.cf2.plugin.admin.dbmodel;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.io.IOException;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import ru.g4.utils.log.LoggingUtils;
+import ru.g4.utils.resources.IResourceBundleWrapper;
+import ru.rtec.cf2.ResourcesStorage;
+import ru.rtec.cf2.plugin.model.objects.IDBObjects;
+import ru.rtec.cf2.plugin.admin.dbmodel.util.SQLScriptReader;
+
+
+/**
+ * Реализация интерфейса {@link IAdminDBModelRepository}
+ */
+public class AdminDBModelRepository implements IAdminDBModelRepository {
+	/**
+	 * Логгер
+	 */
+	private Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Обертка для ResourceBundle
+	 */
+	private IResourceBundleWrapper resourceBundle = ResourcesStorage.getBundle(getClass());
+
+	/**
+	 * Сссылка на модуль модели объектов. Ему в случае удачного подключения
+	 * отдается ссылка на фабрику сессий
+	 */
+	IDBObjects dbModel;
+
+	/**
+	 * Модуль читающий SQL-скрипты из файлов
+	 */
+	SQLScriptReader reader;
+
+	/**
+	 * Конструктор
+	 */
+	public AdminDBModelRepository() {
+
+	}
+
+
+	@Override
+	public void setSQLScriptsPath(String path) {
+		this.reader = new SQLScriptReader(String.format("%s/", path));
+	}
+
+	@Override
+	public void setDBModel(IDBObjects dbModel) {
+		this.dbModel = dbModel;
+	}
+
+	private <T> T queryShell(String script, Function<ResultSet, T> handleResultSet, 
+			String... parameters) {
+
+		try (Session session = dbModel.getSession()) {
+			String query = reader.performScript(script);
+
+			return session.doReturningWork(connection -> {
+				PreparedStatement ps = 
+						connection.prepareStatement(String.format(query, (Object[]) parameters));
+				
+				boolean hasResult = ps.execute();
+				return hasResult ? handleResultSet.apply(ps.getResultSet()) : null;
+			});
+		} catch (IOException e) {
+			log.warn(e.getMessage());
+			log.error(LoggingUtils.dumpThrowable(e));
+		} catch (HibernateException e) {
+			log.warn(e.getMessage());
+			log.error(LoggingUtils.dumpThrowable(e));
+			throw new ADBMError(e.getMessage());
+		} 
+
+		return null;
+	}
+
+	@Override
+	public boolean isValidSchema() {
+		return (boolean) queryShell("check_db.sql", HandleResultSetFunctionFactory.getValidSchemaFunction());
+	}
+
+	@Override 
+	public void preprocDbObjects() {
+		queryShell("clear_empty_objects.sql", null);
+	}
+
+	@Override
+	public List<String> getAdminPrivileges() {
+		return (List<String>) queryShell("get_admin_roles.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
+	}
+
+	@Override
+	public boolean isOwner() {
+		return (boolean) queryShell("check_owner.sql", HandleResultSetFunctionFactory.checkOwnerFunction());
+	}
+
+	@Override
+	public List<String> requestAllUsers() {
+		return (List<String>) queryShell("get_all_users.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
+	}
+
+	@Override
+	public List<String> requestObjectEditors() {
+		return (List<String>) queryShell("get_object_editors.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
+	}
+
+	@Override
+	public void deleteUserByName(String userName) throws ADBMError {
+		queryShell("delete_user.sql", null, userName);
+		log.info(resourceBundle.getString("SuccessDeleteUser_Message"), userName);
+	}
+
+	@Override
+	public void changeUserPassword(String userName, String newPassword) throws ADBMError {
+		queryShell("change_pass.sql",null, userName, newPassword);
+		log.info(resourceBundle.getString("SuccessChangePassowrd_Message"));
+	}
+
+	@Override
+	public void changeUserName(String userName, String newUserName) throws ADBMError {
+		queryShell("change_username.sql",null, userName, newUserName);
+		log.info(resourceBundle.getString("SuccessChangeUsername_Message"));
+	}
+
+	@Override
+	public void createUser(String userName, String password) throws ADBMError {
+		queryShell("create_user.sql", null, userName, password);
+		log.info(resourceBundle.getString("SuccessCreateUser_Message"), userName);
+	}
+
+	@Override
+	public List<String> getUserRoles(String userName) {
+		return (List<String>) queryShell("get_user_roles.sql", HandleResultSetFunctionFactory.getStringListResultFunction(), userName);
+	}
+
+	@Override
+	public void grantPrivilege(String privilege, String userName) {
+		queryShell("grant_privilege.sql", null, privilege, userName);
+	}
+
+	@Override
+	public void revokePrivilege(String privilege, String userName) {
+		queryShell("revoke_privilege.sql", null, privilege, userName);
+	}
+
+	@Override
+	public Map<Integer, String> getAllObjects() {
+		return (Map<Integer, String>) queryShell("get_all_objects.sql", HandleResultSetFunctionFactory.getIntegerStringMapResultFunction());
+	}
+
+	@Override
+	public Map<Integer, String> getAccessObjects(String userName) {
+		return (Map<Integer, String>) queryShell("get_access_objects.sql", HandleResultSetFunctionFactory.getIntegerStringMapResultFunction(), userName);
+	}
+
+	@Override
+	public void grantAccessToObject(String userName, int objectId) {
+		queryShell("grant_access_to_object.sql", null, userName, String.valueOf(objectId));
+	}
+	
+	@Override
+	public void revokeAccessFromObject(String userName, int objectId) {
+		queryShell("revoke_access_from_object.sql", null, userName, String.valueOf(objectId));
+	}
+
+	@Override
+	public void clearUserAccessObjects(String userName) {
+		queryShell("clear_access_objects.sql", null, userName);
+	}
+}

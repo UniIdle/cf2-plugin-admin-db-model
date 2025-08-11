@@ -2,7 +2,7 @@
 <ivy-module version="2.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:m="http://ant.apache.org/ivy/maven"
 	xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
-	<info organisation="rtec.cf2" module="new-development-module" />
+	<info organisation="${module.organization}" module="${ant.project.name}"/>
 
 	<configurations>
 		<conf name="default" visibility="public"
@@ -22,6 +22,7 @@
 			description="артефакты с исходным кодом модуля, если таковые имеются" />
 		<conf name="javadoc" visibility="public"
 			description="артефакты с явадоком модуля, если таковые имеются" />
+		<conf name="zip" visibility="public" description="zip сборки проекта" />
 		<conf name="props" visibility="public" description="свойства проекта (.properties)" />
 		<conf name="note" visibility="public" description="releaseNote проекта" />
 	</configurations>
@@ -30,15 +31,19 @@
 		<artifact ext="jar" type="jar" conf="master" />
 		<artifact ext="jar" type="javadoc" m:classifier="javadoc" conf="javadoc" />
 		<artifact ext="jar" type="source" m:classifier="sources" conf="sources" />
+		<artifact ext="jar" type="test" m:classifier="tests" conf="test"/>
+		<artifact ext="properties" type="prop" conf="props"/>
 		<artifact ext="txt" type="note" conf="note" m:classifier="ReleaseNotes"/>
-
 	</publications>
 
-	<dependencies defaultconfmapping="compile->compile(*),master(*); runtime->runtime(*),master(*); test->runtime(*),master(*); props->props(*)">
-		<dependency org="rtec.cf2" name="cf2-platform" rev="1.0.9" revConstraint="latest.integration"/>
-		<dependency org="rtec.cf2" name="cf2-plugin-model-objects" rev="1.0.43" revConstraint="latest.integration"/>
-		<!-- <dependency org="rtec.cf2" name="cf2-plugin-reports" rev="1.0.13" revConstraint="latest.integration"/>
-		<dependency org="rtec.commons" name="g4-utils" rev="1.3.8" revConstraint="latest.integration"/>  -->
+	<dependencies defaultconfmapping="compile->compile(default),master(default);runtime->runtime(default),master(default);props->props(default)">
+		<dependency org="rtec.cf2" name="cf2-plugin-model-objects" rev="latest.integration"/>
+
+		<!-- for TEST org.junit-->
+		<dependency org="junit" name="junit" rev="4.13.2"
+			conf="test->runtime,master"/>
+		<dependency org="org.hamcrest" name="hamcrest-core" rev="1.3"
+			conf="test->runtime,master"/>
 	</dependencies>
 
-</ivy-module> 
+</ivy-module>

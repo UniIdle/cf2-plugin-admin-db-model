@@ -1,74 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Задаем имя проекта, задание по умолчанию и корневую папку  -->
-<project name="cf2-plugin-model-admin-db" default="retrieve-inner-deps" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
-	<description>Standart pattern for work projects.</description>
-
-	<!-- имя папки с исходникками модуля -->
-	<property name="src.dir" value="src" />
-	<!-- имя папки скомпилированных классов -->
-	<property name="build.dir" value="bin" />
-	<!-- имя папки lib для зависимых библиотек -->
-	<property name="retrieve.dir" value="lib" />
-	<!-- имя папки со сборкой jar -->
-	<property name="ivy.distrib.dir" value="distrib" />
-	<!-- имя системного свойства -->
-	<property environment="env" />
-	<tstamp>
-		<!-- имя и настройка переменной времени сборки -->
-		<format property="build.time" pattern="HHmmss" />
-	</tstamp>
-	<!-- кодировка для исходных файлов -->
-	<property name="encoding.file" value="UTF-8" />
-	<!-- имя jar модуля -->
-	<property name="build.jar.name" value="${ivy.distrib.dir}/${ant.project.name}-${build.time}.jar" />
-
-	<!-- Classpath для компилирования -->
-	<path id="project.class.path">
-		<pathelement location="${build.dir}" />
-		<fileset dir="${retrieve.dir}">
-			<include name="*.jar" />
-		</fileset>
-	</path>
-
-	<target name="retrieve-inner-deps">
-		<ivy:settings file="//home/shadow_wsl/projects/workspace/ivysettings.xml"/>
-		<ivy:resolve conf="default,props" />
-		<ivy:retrieve pattern="${retrieve.dir}/[artifact]-[revision](-[classifier]).[ext]" />
-	</target>
-
-	<target name="retrieve-outer-deps">
-		<ivy:retrieve pattern="${retrieve.dir}/[artifact]-[revision](-[classifier]).[ext]" />
-	</target>
-
-	<!-- удаляет временные папки  -->
-	<target name="clean" description="clean up">
-		<delete dir="${build.dir}" />
-		<delete dir="${ivy.distrib.dir}" />
-	</target>
-
-	<!-- задание создает папку билд  -->
-	<target name="init" depends="clean">
-		<mkdir dir="${build.dir}" />
-		<mkdir dir="${ivy.distrib.dir}" />
-		<tstamp prefix="build" />
-	</target>
-
-	<!-- компилирует исходники и тесты -->
-	<target name="compile" depends="init">
-		<javac destdir="${build.dir}" debug="on" includeantruntime="true" encoding="${encoding.file}" classpathref="project.class.path">
-			<src path="${src.dir}" />
-		</javac>
-		<copy todir="${build.dir}">
-			<fileset dir="${src.dir}" excludes="**/*.java" />
-		</copy>
-	</target>
-
-	<!-- собрать jar модуля -->
-	<target name="build" depends="compile" description="Собрать jar модуля">
-		<jar destfile="${build.jar.name}"
-				basedir="${build.dir}"
-				compress="true"
-				encoding="${encoding.file}" />
-	</target>
-
+<project name="cf2-plugin-admin-db-model" default="publish-local" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+	<import file="build-common.xml" />
+	<property name="module.organization" value="rtec.cf2" />
+	<!-- номер первой цифры в версии модуля -->
+	<property name="first.num" value="1" />
+	<!-- номер второй цифры в версии модуля -->
+	<property name="second.num" value="0" />
 </project>

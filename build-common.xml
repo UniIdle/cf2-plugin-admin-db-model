@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Задаем имя проекта, задание по умолчанию и корневую папку  -->
+<project name="build-common" default="publish-local" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+	<description>Typical ant build-file for lib-projects</description>
+	<!-- переменные ниже универсальны для большинства проектов -->
+	<!-- имя папки с исходникками модуля -->
+	<property name="src.dir" value="src" />
+	<!-- имя папки скомпилированных классов -->
+	<property name="build.dir" value="classes" />
+	<!-- имя папки lib для зависимых библиотек -->
+	<property name="retrieve.dir" value="lib" />
+	<!-- имя папки для тестов -->
+	<property name="test.src.dir" value="test" />
+	<!-- имя папки для javadoc -->
+	<property name="doc.dir" value="javadoc" />
+	<!-- имя папки публикаций -->
+	<property name="ivy.distrib.dir" value="distrib" />
+	<!-- имя системного свойства -->
+	<property environment="env" />
+	<tstamp>
+		<!-- имя и настройка переменной времени сборки -->
+		<format property="build.time" pattern="yyyyMMddHHmm" />
+	</tstamp>
+	<!-- номер svn commit (если сборка выполняется в jenkins) или local при локальной сборке -->
+	<property name="env.SVN_REVISION_1" value="local" />
+	<!-- имя файла манифеста -->
+	<property name="manifest" value="MANIFEST.MF" />
+	<!-- кодировка для исходных файлов -->
+	<property name="encoding.file" value="UTF-8" />
+	<!-- Classpath для компилирования -->
+	<path id="project.class.path">
+		<pathelement location="${build.dir}" />
+		<pathelement location="${test.src.dir}" />
+		<fileset dir="${retrieve.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	<!-- Вывод дополнительной информации о сборке -->
+	<target name="info" description="Вывод дополнительной информации о сборке">
+		<echo message="===== ANT version: ${ant.version} =====" />
+		<echo message="===== Java Version for ANT script: ${java.version} =====" />
+		<echo message="===== Encoding for javac,javadoc,prop: ${encoding.file} =====" />
+		<echo message="===== SVN revision: ${env.SVN_REVISION_1} =====" />
+	</target>
+	<!-- удаляет временные папки  -->
+	<target name="clean" description="clean up" depends="info">
+		<delete dir="${build.dir}" />
+		<delete dir="${doc.dir}" />
+		<delete dir="${ivy.distrib.dir}" />
+		<delete dir="${retrieve.dir}" />
+		<delete file="${manifest}" />
+		<delete>
+			<fileset file="./*.prop" />
+			<fileset file="./*.jar" />
+		</delete>
+	</target>
+	<!-- задание создает папку билд  -->
+	<target name="init" depends="clean">
+		<mkdir dir="${retrieve.dir}" />
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${ivy.distrib.dir}" />
+		<tstamp prefix="build" />
+	</target>
+	<target name="retrieve" depends="init">
+		<ivy:resolve conf="default,props, test" />
+		<ivy:retrieve pattern="${retrieve.dir}/[artifact]-[revision](-[classifier]).[ext]" />
+	</target>
+	<target name="version-local">
+		<tstamp>
+			<format property="now" pattern="yyyyMMddHHmm" />
+		</tstamp>
+		<property name="ivy.new.revision" value="${first.num}.${second.num}-local-${now}" />
+		<echo message="===== version-local: ${ivy.new.revision} =====" />
+	</target>
+	<target name="version-tmp">
+		<ivy:info file="ivy.xml" />
+		<ivy:buildnumber organisation="${ivy.organisation}"
+								module="${ivy.module}"
+								revision="${first.num}.${second.num}"
+								default="${first.num}.${second.num}.0"
+								resolver="libsTmp" />
+		<echo message="===== version-tmp: ${ivy.new.revision} =====" />
+	</target>
+	<target name="version-release">
+		<ivy:info file="ivy.xml" />
+		<ivy:buildnumber organisation="${ivy.organisation}"
+								module="${ivy.module}"
+								revision="${first.num}.${second.num}"
+								default="${first.num}.${second.num}.0"
+								resolver="libsRelease" />
+		<echo message="===== version-release: ${ivy.new.revision} =====" />
+	</target>
+	<!-- формирует имена -->
+	<target name="define-names" depends="retrieve">
+		<!-- имя модуля с версией -->
+		<property name="jar.name" value="${ivy.module}-${ivy.new.revision}" />
+		<!-- имя jar модуля -->
+		<property name="build.jar.name" value="${ivy.distrib.dir}/jars/${jar.name}.jar" />
+		<!-- имя jar файла с исходниками -->
+		<property name="source.jar.name" value="${ivy.distrib.dir}/sources/${jar.name}-sources.jar" />
+		<!-- имя jar файла с тестами -->
+		<property name="test.jar.name" value="${ivy.distrib.dir}/tests/${jar.name}-tests.jar" />
+		<!-- имя jar файла с javadoc-ком -->
+		<property name="javadoc.jar.name" value="${ivy.distrib.dir}/javadocs/${jar.name}-javadoc.jar" />
+		<!-- имя properties файла модуля с настройками -->
+		<property name="properties.name" value="${jar.name}.properties" />
+		<!-- имя releaseNotes файла модуля -->
+		<property name="note.name" value="${jar.name}-ReleaseNotes.txt" />
+	</target>
+	<!-- компилирует исходники и тесты -->
+	<target name="compile" depends="define-names">
+		<javac destdir="${build.dir}" debug="on" includeantruntime="true" encoding="${encoding.file}" classpathref="project.class.path">
+			<src path="${src.dir}" />
+			<src path="${test.src.dir}" />
+		</javac>
+		<copy todir="${build.dir}">
+			<fileset dir="${src.dir}" excludes="**/*.java" />
+		</copy>
+	</target>
+	<!-- формирует manifest -->
+	<target name="manifest">
+		<manifest file="${manifest}">
+			<section name="version">
+					<attribute name="build-timestamp" value="${build.time}" />
+					<attribute name="build-user" value="${user.name}" />
+					<attribute name="build-id" value="${first.num}.${second.num}" />
+					<attribute name="build-revision" value="${env.SVN_REVISION_1}" />
+					<attribute name="artifact-revision" value="${ivy.new.revision}" />
+			</section>
+		</manifest>
+	</target>
+	<!-- запускает тесты  и создает jar с тестами -->
+	<target name="junit" depends="compile, manifest">
+		<junit fork="no" includeantruntime="true" haltonfailure="yes">
+			<classpath refid="project.class.path" />
+			<formatter type="brief" usefile="false" />
+			<batchtest todir="./" unless="hasFailingTests">
+					<fileset dir="${build.dir}" includes="**/*Test.class" />
+			</batchtest>
+		</junit>
+		<jar destfile="${test.jar.name}"
+				basedir="${build.dir}"
+				compress="true"
+				includes="**/*Test.class"
+				manifest="${manifest}" />
+	</target>
+	<!-- собрать jar модуля -->
+	<target name="build" depends="junit" description="Собрать jar модуля">
+		<jar destfile="${build.jar.name}"
+				basedir="${build.dir}"
+				compress="true"
+				excludes="**/*Test*.*"
+				manifest="${manifest}"
+				encoding="${encoding.file}" />
+	</target>
+	<!-- собрать jar модуля без публикации -->
+	<target name="build-local" depends="version-local, build" description="Собрать jar модуля без публикации" />
+	<!-- создает jar с исходниками  -->
+	<target name="sources" depends="build">
+		<jar destfile="${source.jar.name}" basedir="${src.dir}" compress="true" manifest="${manifest}" />
+	</target>
+	<!-- создает jar с javadoc -->
+	<target name="javadoc" depends="sources">
+		<mkdir dir="${doc.dir}" />
+		<javadoc sourcepath="${src.dir}"
+					author="true"
+					version="true"
+					access="private"
+					destdir="${doc.dir}"
+					classpathref="project.class.path"
+					encoding="${encoding.file}" />
+		<jar destfile="${javadoc.jar.name}"
+				basedir="${doc.dir}"
+				compress="true"
+				includes="**/*"
+				manifest="${manifest}" />
+		<delete dir="${doc.dir}" failonerror="no" />
+		<delete dir="${retrieve.dir}" failonerror="no" />
+	</target>
+	<!-- Копируем properties модуля для публикации -->
+	<target name="prop" depends="javadoc">
+		<copy file="prop/${ivy.module}.properties" tofile="${ivy.distrib.dir}/props/${properties.name}" />
+	</target>
+	<!-- Копируем ReleaseNotes.txt для публикации -->
+	<target name="note" depends="prop">
+		<copy file="ReleaseNotes.txt" tofile="${ivy.distrib.dir}/notes/${note.name}" encoding="${encoding.file}" />
+	</target>
+	<!-- Публикация модуля в локальный репозитарий -->
+	<target name="publish-local" depends="version-local, note" description="Публикация модуля в локальный репозитарий">
+		<ivy:deliver status="integration" pubrevision="${ivy.new.revision}" />
+		<ivy:publish overwrite="false" status="integration" revision="${ivy.new.revision}" resolver="local" />
+	</target>
+	<!-- Публикация модуля в artifactory в репозитории libs-tmp -->
+	<target name="publish-tmp"
+			depends="version-tmp, note"
+			description="Публикация модуля в artifactory в репозитории libs-tmp">
+		<ivy:deliver status="integration" pubrevision="${ivy.new.revision}" />
+		<ivy:publish overwrite="true" revision="${ivy.new.revision}" resolver="libsTmp" />
+	</target>
+	<!-- Публикация модуля в artifactory в репозитории libs-release-local -->
+	<target name="publish-release"
+			depends="version-release, note"
+			description="Публикация модуля в artifactory в репозитории libs-release-local">
+		<ivy:deliver status="release" pubrevision="${ivy.new.revision}" />
+		<ivy:publish overwrite="true" revision="${ivy.new.revision}" resolver="libsRelease" />
+	</target>
+</project>
