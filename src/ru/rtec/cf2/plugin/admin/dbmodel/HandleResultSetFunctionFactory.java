@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import ru.g4.utils.log.LoggingUtils;
 import ru.g4.utils.resources.IResourceBundleWrapper;
 import ru.rtec.cf2.ResourcesStorage;
+import ru.rtec.cf2.plugin.admin.dbmodel.dialects.postgresql.AdminPostgreSQLDBModelPlugin;
 
 
 /**
@@ -45,7 +46,7 @@ public class HandleResultSetFunctionFactory {
 	 * Обертка для ResourceBundle
 	 */
 	private static IResourceBundleWrapper resourceBundle = 
-			ResourcesStorage.getBundle(HandleResultSetFunctionFactory.class);
+			ResourcesStorage.getBundle(AdminPostgreSQLDBModelPlugin.class);
 
 	/**
 	 * Конструктор
