@@ -23,15 +23,16 @@ public class HandleResultSetFunctionFactory {
 	/**
 	 * Необходимые объекты в БД
 	 */
-	private static final List<String> necessuryDBObjects = Arrays.asList(
-		"cf2_object_access_controller_role", 
-		"cf2_template_editor_role", 
-		"cf2_security_controller_role", 
-		"cf2_object_editor_role", 
+	private static final List<String> NECESSARY_DB_OBJECTS = Arrays.asList(
+		"cf2_application_admin_role", 
 		"cf2_base_user_role", 
-		"users_access_map_table", 
+		"cf2_object_access_controller_role", 
+		"cf2_object_editor_role", 
+		"cf2_security_controller_role", 
+		"cf2_template_editor_role", 
 		"check_access_function", 
-		"define_root_id_function" 
+		"define_root_id_function", 
+		"users_access_map_table"
 	);
 
 	/**
@@ -56,22 +57,21 @@ public class HandleResultSetFunctionFactory {
 
 	public static Function<ResultSet, Boolean> getValidSchemaFunction() {
 		return (rs) -> {
-			Boolean result = true;
-
 			try {
+				List<String> necessuryDBObjects = new ArrayList<>(NECESSARY_DB_OBJECTS);
 				while(rs.next()) {
-					if (!necessuryDBObjects.contains(rs.getString(1))) {
-						result = false;
-						log.warn(
-								resourceBundle.getString("AdminDBModelRepository_UncorrectAdministrationDB"));
-
-						log.warn("В схеме отсутствует объект - {}", rs.getString(1));
-
-						break;
-					};
+					necessuryDBObjects.remove(rs.getString(1));
 				};
 
-				return result;
+				if (necessuryDBObjects.size() == 0) {
+					return true;
+				} else {
+					log.warn(resourceBundle.getString(
+								"AdminDBModelRepository_UncorrectAdministrationDB"));
+					log.warn("В схеме отсутствуют объекты: {}", necessuryDBObjects);
+
+					return false;
+				}
 			} catch (SQLException e) {
 				log.warn(e.getMessage());
 				log.error(LoggingUtils.dumpThrowable(e));
@@ -117,13 +117,32 @@ public class HandleResultSetFunctionFactory {
 		};
 	}
 
-	public static Function<ResultSet, Map<Integer, String>> getIntegerStringMapResultFunction() {
+	public static Function<ResultSet, List<Long>> getLongListResultFunction() {
 		return (rs) -> {
-			Map<Integer, String> result = new HashMap<>();
+			List<Long> result = new ArrayList<>();
 
 			try {
 				while(rs.next()) {
-					result.put(rs.getInt(1), rs.getString(2));
+					result.add(rs.getLong(1));
+				}
+
+				return result;
+			} catch (SQLException e) {
+				log.warn(e.getMessage());
+				log.error(LoggingUtils.dumpThrowable(e));
+
+				return result;
+			}
+		};
+	}
+
+	public static Function<ResultSet, Map<Long, String>> getLongStringMapResultFunction() {
+		return (rs) -> {
+			Map<Long, String> result = new HashMap<>();
+
+			try {
+				while(rs.next()) {
+					result.put(rs.getLong(1), rs.getString(2));
 				}
 
 				return result;

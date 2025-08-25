@@ -25,6 +25,13 @@ public interface IAdminDBModelRepository {
 	public void setSQLScriptsPath(String path);
 
 	/**
+	 * Возвращает имя пользователя, подключившегося к БД
+	 * 
+	 * @return имя текущего пользователя
+	 */
+	public String getCurrentUserName();
+
+	/**
 	 * Проверяет целостность БД
 	 * 
 	 * @return булево значение в наличии ли все необходимы объекты БД для организации ролевого доступа
@@ -123,15 +130,22 @@ public interface IAdminDBModelRepository {
 	 * 
 	 * @return список имен объектов
 	 */
-	public Map<Integer, String> getAllObjects();
+	public Map<Long, String> getAllObjects();
 
 	/**
 	 * Получение имен доступных объектов
 	 * 
+	 * @return список имен объектов
+	 */
+	public List<Long> getAccessObjects();
+
+	/**
+	 * Получение имен корневых доступных объектов
+	 * 
 	 * @param userName имя пользователя
 	 * @return список имен объектов
 	 */
-	public Map<Integer, String> getAccessObjects(String userName);
+	public Map<Long, String> getAccessRootObjects(String userName);
 
 	/**
 	 * Назначение привилегий на объект для пользователя
@@ -139,7 +153,7 @@ public interface IAdminDBModelRepository {
 	 * @param userName имя пользователя
 	 * @param objectId ID объекта
 	 */
-	public void grantAccessToObject(String userName, int objectId);
+	public void grantAccessToObject(String userName, Long objectId);
 
 	/**
 	 * Удаление привилегии на объект для пользователя
@@ -147,7 +161,7 @@ public interface IAdminDBModelRepository {
 	 * @param userName имя пользователя
 	 * @param objectId ID объекта
 	 */
-	public void revokeAccessFromObject(String userName, int objectId);
+	public void revokeAccessFromObject(String userName, Long objectId);
 
 	/**
 	 * Удаляет объекты из таблицы users_access_map_table для указанного пользователя

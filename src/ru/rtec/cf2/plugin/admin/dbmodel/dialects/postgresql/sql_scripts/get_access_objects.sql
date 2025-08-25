@@ -1,7 +1,5 @@
-/* Скрипт для получения имен доступных объектов*/
+/* Скрипт для получения имен объектов доступных пользователю*/
 
-SELECT id, name 
-FROM users_access_map_table uamt 
-JOIN object obj
-ON uamt.access_object_id = obj.id
-WHERE uamt.user_name = '%s';
+SELECT id 
+FROM object 
+WHERE check_access_function(id);

@@ -12,9 +12,10 @@ SELECT rolname
 FROM pg_roles
 WHERE rolname in (
 	'cf2_base_user_role',
-	'cf2_security_controller_role', 
 	'cf2_object_editor_role',
 	'cf2_template_editor_role', 
-	'cf2_object_access_controller_role'
+	'cf2_object_access_controller_role',
+	'cf2_security_controller_role', 
+	'cf2_application_admin_role'
 )
 ORDER BY proname;

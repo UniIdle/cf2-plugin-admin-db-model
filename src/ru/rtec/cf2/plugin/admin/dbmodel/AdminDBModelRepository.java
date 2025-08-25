@@ -61,6 +61,11 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 		this.dbModel = dbModel;
 	}
 
+	@Override
+	public String getCurrentUserName() {
+		return dbModel.getConnectionParameters().getUserName();
+	}
+
 	private <T> T queryShell(String script, Function<ResultSet, T> handleResultSet, 
 			String... parameters) {
 
@@ -156,22 +161,27 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 	@Override
-	public Map<Integer, String> getAllObjects() {
-		return (Map<Integer, String>) queryShell("get_all_objects.sql", HandleResultSetFunctionFactory.getIntegerStringMapResultFunction());
+	public Map<Long, String> getAllObjects() {
+		return (Map<Long, String>) queryShell("get_all_objects.sql", HandleResultSetFunctionFactory.getLongStringMapResultFunction());
 	}
 
 	@Override
-	public Map<Integer, String> getAccessObjects(String userName) {
-		return (Map<Integer, String>) queryShell("get_access_objects.sql", HandleResultSetFunctionFactory.getIntegerStringMapResultFunction(), userName);
+	public List<Long> getAccessObjects() {
+		return (List<Long>) queryShell("get_access_objects.sql", HandleResultSetFunctionFactory.getLongListResultFunction());
 	}
 
 	@Override
-	public void grantAccessToObject(String userName, int objectId) {
+	public Map<Long, String> getAccessRootObjects(String userName) {
+		return (Map<Long, String>) queryShell("get_access_root_objects.sql", HandleResultSetFunctionFactory.getLongStringMapResultFunction(), userName);
+	}
+
+	@Override
+	public void grantAccessToObject(String userName, Long objectId) {
 		queryShell("grant_access_to_object.sql", null, userName, String.valueOf(objectId));
 	}
 	
 	@Override
-	public void revokeAccessFromObject(String userName, int objectId) {
+	public void revokeAccessFromObject(String userName, Long objectId) {
 		queryShell("revoke_access_from_object.sql", null, userName, String.valueOf(objectId));
 	}
 
@@ -179,4 +189,5 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	public void clearUserAccessObjects(String userName) {
 		queryShell("clear_access_objects.sql", null, userName);
 	}
+
 }
