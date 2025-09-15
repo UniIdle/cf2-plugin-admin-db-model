@@ -8,6 +8,7 @@ import ru.rtec.cf2.pi.IPlugin;
 import ru.rtec.cf2.pi.PluginVersion;
 import ru.rtec.cf2.plugin.model.objects.IConnectionStateListener;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
+import ru.rtec.cf2.plugin.admin.dbmodel.dialects.postgresql.AdminPostgreSQLDBModelPlugin;
 
 
 /**
@@ -17,7 +18,8 @@ public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICom
 	/**
 	 * Обертка для ResourceBundle
 	 */
-	private IResourceBundleWrapper resourceBundle = ResourcesStorage.getBundle(getClass());
+	private IResourceBundleWrapper resourceBundle = 
+			ResourcesStorage.getBundle(AdminPostgreSQLDBModelPlugin.class);
 
 	/**
 	 * Контекст приложения

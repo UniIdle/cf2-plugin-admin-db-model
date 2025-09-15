@@ -15,6 +15,7 @@ import ru.g4.utils.log.LoggingUtils;
 import ru.g4.utils.resources.IResourceBundleWrapper;
 import ru.rtec.cf2.ResourcesStorage;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
+import ru.rtec.cf2.plugin.admin.dbmodel.dialects.postgresql.AdminPostgreSQLDBModelPlugin;
 import ru.rtec.cf2.plugin.admin.dbmodel.util.SQLScriptReader;
 
 
@@ -30,7 +31,8 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	/**
 	 * Обертка для ResourceBundle
 	 */
-	private IResourceBundleWrapper resourceBundle = ResourcesStorage.getBundle(getClass());
+	private IResourceBundleWrapper resourceBundle = 
+			ResourcesStorage.getBundle(AdminPostgreSQLDBModelPlugin.class);
 
 	/**
 	 * Сссылка на модуль модели объектов. Ему в случае удачного подключения
@@ -124,7 +126,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public void deleteUserByName(String userName) throws ADBMError {
 		queryShell("delete_user.sql", null, userName);
-		log.info(resourceBundle.getString("SuccessDeleteUser_Message"), userName);
+		log.info(resourceBundle.getStringFormat("SuccessDeleteUser_Message", userName));
 	}
 
 	@Override
@@ -142,7 +144,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public void createUser(String userName, String password) throws ADBMError {
 		queryShell("create_user.sql", null, userName, password);
-		log.info(resourceBundle.getString("SuccessCreateUser_Message"), userName);
+		log.info(resourceBundle.getStringFormat("SuccessCreateUser_Message", userName));
 	}
 
 	@Override
