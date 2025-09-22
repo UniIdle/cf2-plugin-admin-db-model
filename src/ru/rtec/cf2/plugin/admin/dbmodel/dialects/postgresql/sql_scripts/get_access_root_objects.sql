@@ -1,7 +1,7 @@
 /* Скрипт для получения имен доступных корневых объектов*/
 
 SELECT obj.id, obj.name
-FROM users_access_map_table uamt 
+FROM %2$s uamt 
 JOIN object obj
 ON obj.id = uamt.access_object_id
-WHERE user_name = '%s';
+WHERE user_name = '%1$s';

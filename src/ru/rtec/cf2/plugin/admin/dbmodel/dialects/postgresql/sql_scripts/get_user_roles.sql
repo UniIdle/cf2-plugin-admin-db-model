@@ -1,8 +1,7 @@
-/* Скрипт для получения привелегий пользователя */
+/* Скрипт возвращает список ролей для текущего пользователя */
 
 SELECT r.rolname
 FROM pg_roles r
 JOIN pg_auth_members m ON r.oid = m.roleid
-JOIN pg_roles r2 ON r2.oid = m.member
-WHERE r2.rolname = '%s' AND
-	r.rolname != 'cf2_base_user_role';
+JOIN pg_user u ON u.usesysid = m.member
+WHERE u.usename = session_user;

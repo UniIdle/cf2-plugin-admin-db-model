@@ -69,14 +69,14 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 	private <T> T queryShell(String script, Function<ResultSet, T> handleResultSet, 
-			String... parameters) {
+			Object... parameters) {
 
 		try (Session session = dbModel.getSession()) {
 			String query = reader.performScript(script);
 
 			return session.doReturningWork(connection -> {
 				PreparedStatement ps = 
-						connection.prepareStatement(String.format(query, (Object[]) parameters));
+						connection.prepareStatement(String.format(query, parameters));
 				
 				boolean hasResult = ps.execute();
 				return hasResult ? handleResultSet.apply(ps.getResultSet()) : null;
@@ -88,108 +88,137 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 			log.warn(e.getMessage());
 			log.error(LoggingUtils.dumpThrowable(e));
 			throw new ADBMError(e.getMessage());
-		} 
+		} catch (Exception ex) {
+			log.warn(ex.getMessage());
+			log.error(LoggingUtils.dumpThrowable(ex));
+		}
 
 		return null;
 	}
 
 	@Override
 	public boolean isValidSchema() {
-		return (boolean) queryShell("check_db.sql", HandleResultSetFunctionFactory.getValidSchemaFunction());
+		return (boolean) queryShell("check_db.sql", 
+				HandleResultSetFunctionFactory.checkValidSchemaFunction(), 
+				DBObjects.define_root_id_function, DBObjects.check_access_function, 
+				DBObjects.users_access_map_table, DBObjects.cf2_base_user_role, 
+				DBObjects.cf2_dictionary_editor_role, DBObjects.cf2_object_access_controller_role,
+				DBObjects.cf2_user_manager_role, DBObjects.cf2_security_admin_role, 
+				DBObjects.cf2_object_editor_role);
 	}
 
 	@Override 
-	public void preprocDbObjects() {
-		queryShell("clear_empty_objects.sql", null);
-	}
-
-	@Override
-	public List<String> getAdminPrivileges() {
-		return (List<String>) queryShell("get_admin_roles.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
+	public void preprocDBObjects() {
+		queryShell("clear_empty_objects.sql", null, 
+				DBObjects.users_access_map_table);
 	}
 
 	@Override
 	public boolean isOwner() {
-		return (boolean) queryShell("check_owner.sql", HandleResultSetFunctionFactory.checkOwnerFunction());
+		return (boolean) queryShell("check_owner.sql", 
+				HandleResultSetFunctionFactory.checkOwnerFunction());
 	}
 
 	@Override
 	public List<String> requestAllUsers() {
-		return (List<String>) queryShell("get_all_users.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
-	}
-
-	@Override
-	public List<String> requestObjectEditors() {
-		return (List<String>) queryShell("get_object_editors.sql", HandleResultSetFunctionFactory.getStringListResultFunction());
+		return (List<String>) queryShell("get_all_users.sql", 
+				HandleResultSetFunctionFactory.getStringListResultFunction(), 
+				DBObjects.cf2_base_user_role);
 	}
 
 	@Override
 	public void deleteUserByName(String userName) throws ADBMError {
-		queryShell("delete_user.sql", null, userName);
+		queryShell("delete_user.sql", null, 
+				userName, DBObjects.cf2_user_manager_role, DBObjects.users_access_map_table);
+
 		log.info(resourceBundle.getStringFormat("SuccessDeleteUser_Message", userName));
 	}
 
 	@Override
 	public void changeUserPassword(String userName, String newPassword) throws ADBMError {
-		queryShell("change_pass.sql",null, userName, newPassword);
+		queryShell("change_pass.sql",null, 
+				userName, newPassword, DBObjects.cf2_user_manager_role);
+
 		log.info(resourceBundle.getString("SuccessChangePassowrd_Message"));
 	}
 
 	@Override
 	public void changeUserName(String userName, String newUserName) throws ADBMError {
-		queryShell("change_username.sql",null, userName, newUserName);
+		queryShell("change_username.sql",null, 
+				userName, newUserName, DBObjects.cf2_user_manager_role);
+
 		log.info(resourceBundle.getString("SuccessChangeUsername_Message"));
 	}
 
 	@Override
 	public void createUser(String userName, String password) throws ADBMError {
-		queryShell("create_user.sql", null, userName, password);
+		queryShell("create_user.sql", null, 
+				userName, password, DBObjects.cf2_base_user_role, DBObjects.cf2_user_manager_role);
+
 		log.info(resourceBundle.getStringFormat("SuccessCreateUser_Message", userName));
 	}
 
 	@Override
+	public List<String> getCurrentUserRoles() {
+		return (List<String>) queryShell("get_user_roles.sql", 
+				HandleResultSetFunctionFactory.getStringListResultFunction());
+	}
+
+	@Override
 	public List<String> getUserRoles(String userName) {
-		return (List<String>) queryShell("get_user_roles.sql", HandleResultSetFunctionFactory.getStringListResultFunction(), userName);
+		return (List<String>) queryShell("get_roles_by_username.sql", 
+				HandleResultSetFunctionFactory.getStringListResultFunction(), 
+				userName, DBObjects.cf2_base_user_role);
 	}
 
 	@Override
 	public void grantPrivilege(String privilege, String userName) {
-		queryShell("grant_privilege.sql", null, privilege, userName);
+		queryShell("grant_privilege.sql", null, 
+				privilege, userName, DBObjects.cf2_user_manager_role);
 	}
 
 	@Override
 	public void revokePrivilege(String privilege, String userName) {
-		queryShell("revoke_privilege.sql", null, privilege, userName);
+		queryShell("revoke_privilege.sql", null, 
+				privilege, userName, DBObjects.cf2_user_manager_role);
 	}
 
 	@Override
 	public Map<Long, String> getAllObjects() {
-		return (Map<Long, String>) queryShell("get_all_objects.sql", HandleResultSetFunctionFactory.getLongStringMapResultFunction());
+		return (Map<Long, String>) queryShell("get_all_objects.sql", 
+				HandleResultSetFunctionFactory.getLongStringMapResultFunction());
 	}
 
 	@Override
 	public List<Long> getAccessObjects() {
-		return (List<Long>) queryShell("get_access_objects.sql", HandleResultSetFunctionFactory.getLongListResultFunction());
+		return (List<Long>) queryShell("get_access_objects.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				DBObjects.check_access_function);
 	}
 
 	@Override
 	public Map<Long, String> getAccessRootObjects(String userName) {
-		return (Map<Long, String>) queryShell("get_access_root_objects.sql", HandleResultSetFunctionFactory.getLongStringMapResultFunction(), userName);
+		return (Map<Long, String>) queryShell("get_access_root_objects.sql", 
+				HandleResultSetFunctionFactory.getLongStringMapResultFunction(), 
+				userName, DBObjects.users_access_map_table);
 	}
 
 	@Override
 	public void grantAccessToObject(String userName, Long objectId) {
-		queryShell("grant_access_to_object.sql", null, userName, String.valueOf(objectId));
+		queryShell("grant_access_to_object.sql", null, 
+				userName, String.valueOf(objectId), DBObjects.users_access_map_table);
 	}
 	
 	@Override
 	public void revokeAccessFromObject(String userName, Long objectId) {
-		queryShell("revoke_access_from_object.sql", null, userName, String.valueOf(objectId));
+		queryShell("revoke_access_from_object.sql", null, 
+				userName, String.valueOf(objectId), DBObjects.users_access_map_table);
 	}
 
 	@Override
 	public void clearUserAccessObjects(String userName) {
-		queryShell("clear_access_objects.sql", null, userName);
+		queryShell("clear_access_objects.sql", null, 
+				userName, DBObjects.users_access_map_table);
 	}
 
 }

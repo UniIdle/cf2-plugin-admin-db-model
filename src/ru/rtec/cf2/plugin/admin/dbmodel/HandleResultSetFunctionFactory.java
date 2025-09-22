@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,17 +26,8 @@ public class HandleResultSetFunctionFactory {
 	/**
 	 * Необходимые объекты в БД
 	 */
-	private static final List<String> NECESSARY_DB_OBJECTS = Arrays.asList(
-		"cf2_application_admin_role", 
-		"cf2_base_user_role", 
-		"cf2_object_access_controller_role", 
-		"cf2_object_editor_role", 
-		"cf2_security_controller_role", 
-		"cf2_template_editor_role", 
-		"check_access_function", 
-		"define_root_id_function", 
-		"users_access_map_table"
-	);
+	private static final List<DBObjects> NECESSARY_DB_OBJECTS = 
+			Arrays.asList(DBObjects.values());
 
 	/**
 	 * Логгер
@@ -56,10 +49,12 @@ public class HandleResultSetFunctionFactory {
 	}
 
 
-	public static Function<ResultSet, Boolean> getValidSchemaFunction() {
+	public static Function<ResultSet, Boolean> checkValidSchemaFunction() {
 		return (rs) -> {
 			try {
-				List<String> necessuryDBObjects = new ArrayList<>(NECESSARY_DB_OBJECTS);
+				List<String> necessuryDBObjects = NECESSARY_DB_OBJECTS.stream().map(Enum::name)
+						.collect(Collectors.toList());
+
 				while(rs.next()) {
 					necessuryDBObjects.remove(rs.getString(1));
 				};
@@ -68,7 +63,8 @@ public class HandleResultSetFunctionFactory {
 					return true;
 				} else {
 					log.warn(resourceBundle.getString(
-								"AdminDBModelRepository_UncorrectAdministrationDB"));
+							"AdminDBModelRepository_UncorrectAdministrationDB"));
+
 					log.warn("В схеме отсутствуют объекты: {}", necessuryDBObjects);
 
 					return false;

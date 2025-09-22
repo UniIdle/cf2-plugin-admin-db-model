@@ -6,7 +6,7 @@ WITH RECURSIVE rec AS (
 	WHERE roleid IN ( 
 		SELECT oid 
 		FROM pg_roles 
-		WHERE rolname = 'cf2_base_user_role' 
+		WHERE rolname = '%s' 
 	)
 	UNION 
 	SELECT m.roleid, m.member 

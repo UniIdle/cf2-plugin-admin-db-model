@@ -41,14 +41,7 @@ public interface IAdminDBModelRepository {
 	/**
 	 * Удаляет устаревшние строки из таблицы users_access_map_table
 	 */
-	public void preprocDbObjects();
-
-	/**
-	 * Проверяет полномочия текущего пользователя для администрирования
-	 * 
-	 * @return список административных привилегий пользователя
-	 */
-	public List<String> getAdminPrivileges();
+	public void preprocDBObjects();
 
 	/**
 	 * Проверяет, является ли текущий пользователь "Владельцем"
@@ -58,18 +51,11 @@ public interface IAdminDBModelRepository {
 	public boolean isOwner();
 
 	/**
-	 * Возвращает список всех пользователей конфигуратора
+	 * Возвращает список всех пользователей конфигуратора(наследники cf2_base_user_role)
 	 * 
 	 * @return список пользователей
 	 */
 	public List<String> requestAllUsers();
-
-	/**
-	 * Возвращает список пользователей редакторов объектов
-	 * 
-	 * @return редаторы объектов
-	 */
-	public List<String> requestObjectEditors();
 
 	/**
 	 * Удаляет пользователя конфигуратора оп его имени
@@ -101,6 +87,13 @@ public interface IAdminDBModelRepository {
 	 * @param password пароль
 	 */
 	public void createUser(String userName, String password) throws ADBMError;
+
+	/**
+	 * Получает все роли к которым принадлежит пользователь
+	 * 
+	 * @return список административных привилегий пользователя
+	 */
+	public List<String> getCurrentUserRoles();
 
 	/**
 	 * Получает все роли к которым принадлежит пользователь
