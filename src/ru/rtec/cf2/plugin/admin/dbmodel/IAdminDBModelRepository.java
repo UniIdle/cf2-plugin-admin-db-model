@@ -7,7 +7,6 @@ import ru.rtec.cf2.plugin.model.objects.IDBObjects;
 
 /**
  * Интерфейс для работы с ролевым доступом к объектам конфигуратора
- * 
  */
 public interface IAdminDBModelRepository {
 	/**
@@ -51,18 +50,25 @@ public interface IAdminDBModelRepository {
 	public boolean isOwner();
 
 	/**
-	 * Возвращает список всех пользователей конфигуратора(наследники cf2_base_user_role)
+	 * Возвращает список администраторов пользователей
 	 * 
 	 * @return список пользователей
 	 */
-	public List<String> requestAllUsers();
+	public List<String> requestUserManagers();
+
+	/**
+	 * Возвращает список всех пользователей конфигуратора кроме cf2_user_manager_role
+	 * 
+	 * @return список пользователей
+	 */
+	public List<String> requestUsersWithoutManagers();
 
 	/**
 	 * Удаляет пользователя конфигуратора оп его имени
 	 * 
 	 * @param userName имя пользователя
 	 */
-	public void deleteUserByName(String userName) throws ADBMError;
+	public void deleteUser(String userName) throws ADBMError;
 
 	/**
 	 * Меняeт пароль для пользователя

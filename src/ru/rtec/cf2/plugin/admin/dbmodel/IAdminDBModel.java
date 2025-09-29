@@ -5,7 +5,6 @@ import ru.rtec.cf2.plugin.model.objects.IConnectionStateListener;
 
 /**
  * Интерфейс для работы с ролевым доступом к объектам конфигуратора
- * 
  */
 public interface IAdminDBModel {
 	/**

@@ -7,7 +7,6 @@ import java.io.IOException;
 
 /**
  * Класс для чтения SQL-скриптов из файлов
- * 
  */
 public class SQLScriptReader {
 	/**
@@ -23,6 +22,7 @@ public class SQLScriptReader {
 
 	/**
 	 * Метод для чтения SQL запроса из файла
+	 * 
 	 * @param fileName путь к SQL скрипту
 	 * @return SQL запрос из файла в формате строки
 	 * @throws IOException

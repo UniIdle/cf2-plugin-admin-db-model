@@ -120,14 +120,21 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 	@Override
-	public List<String> requestAllUsers() {
-		return (List<String>) queryShell("get_all_users.sql", 
+	public List<String> requestUserManagers() {
+		return (List<String>) queryShell("get_user_managers.sql", 
 				HandleResultSetFunctionFactory.getStringListResultFunction(), 
-				DBObjects.cf2_base_user_role);
+				DBObjects.cf2_user_manager_role);
 	}
 
 	@Override
-	public void deleteUserByName(String userName) throws ADBMError {
+	public List<String> requestUsersWithoutManagers() {
+		return (List<String>) queryShell("get_users_without_managers.sql", 
+				HandleResultSetFunctionFactory.getStringListResultFunction(), 
+				DBObjects.cf2_base_user_role, DBObjects.cf2_user_manager_role);
+	}
+
+	@Override
+	public void deleteUser(String userName) throws ADBMError {
 		queryShell("delete_user.sql", null, 
 				userName, DBObjects.cf2_user_manager_role, DBObjects.users_access_map_table);
 
