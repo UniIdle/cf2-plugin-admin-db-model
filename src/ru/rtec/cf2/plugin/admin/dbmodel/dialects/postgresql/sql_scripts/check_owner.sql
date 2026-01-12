@@ -2,4 +2,5 @@
 
 SELECT pg_get_userbyid(nspowner)
 FROM pg_namespace 
-WHERE nspname = current_schema() and pg_get_userbyid(nspowner) = current_user;
+WHERE nspname = current_schema() AND 
+		pg_get_userbyid(nspowner) = session_user;

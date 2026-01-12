@@ -1,17 +1,32 @@
-/* Скрипт получения списка пользователей конфигуратора */
-
 WITH RECURSIVE rec AS ( 
 	SELECT roleid, member 
 	FROM pg_auth_members 
 	WHERE roleid IN ( 
 		SELECT oid 
 		FROM pg_roles 
-		WHERE rolname = '%s'
+		WHERE rolname = '%1$s'
+	) AND member NOT IN (
+		SELECT member 
+		FROM pg_auth_members 
+		WHERE roleid IN (
+			SELECT oid 
+			FROM pg_roles 
+			WHERE rolname = '%2$s'
+		)
 	)
 	UNION 
 	SELECT m.roleid, m.member 
 	FROM pg_auth_members AS m 
 	JOIN rec ON rec.member = m.roleid 
+	WHERE m.member NOT IN (
+		SELECT member 
+		FROM pg_auth_members 
+		WHERE roleid IN (
+			SELECT oid 
+			FROM pg_roles 
+			WHERE rolname = '%2$s'
+		)
+	)
 ) SELECT DISTINCT(u.usename) 
 	FROM pg_roles r 
 	JOIN rec AS m ON r.oid = m.roleid 

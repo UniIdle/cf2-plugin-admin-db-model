@@ -57,11 +57,25 @@ public interface IAdminDBModelRepository {
 	public List<String> requestUserManagers();
 
 	/**
+	 * Возвращает список системных администраторов
+	 * 
+	 * @return список пользователей
+	 */
+	public List<String> requestSysAdmins();
+
+	/**
+	 * Возвращает список администраторов безопасности
+	 * 
+	 * @return список пользователей
+	 */
+	public List<String> requestSecurityAdmins();
+
+	/**
 	 * Возвращает список всех пользователей конфигуратора кроме cf2_user_manager_role
 	 * 
 	 * @return список пользователей
 	 */
-	public List<String> requestUsersWithoutManagers();
+	public List<String> requestUsersWithoutAdmins();
 
 	/**
 	 * Удаляет пользователя конфигуратора оп его имени
@@ -124,49 +138,49 @@ public interface IAdminDBModelRepository {
 	 */
 	public void revokePrivilege(String privilege, String userName);
 
-	/**
-	 * Получение имен всех объектов
-	 * 
-	 * @return список имен объектов
-	 */
-	public Map<Long, String> getAllObjects();
+	// /**
+	//  * Получение имен всех корневых объектов
+	//  * 
+	//  * @return список имен объектов
+	//  */
+	// public Map<Long, String> getRootObjects();
 
-	/**
-	 * Получение имен доступных объектов
-	 * 
-	 * @return список имен объектов
-	 */
-	public List<Long> getAccessObjects();
+	// /**
+	//  * Получение списка доступных объектов
+	//  * 
+	//  * @return список доступных объектов
+	//  */
+	// public List<Long> getAccessObjects();
 
-	/**
-	 * Получение имен корневых доступных объектов
-	 * 
-	 * @param userName имя пользователя
-	 * @return список имен объектов
-	 */
-	public Map<Long, String> getAccessRootObjects(String userName);
+	// /**
+	//  * Получение списка объектов к которым выдан доступ
+	//  * 
+	//  * @param userName имя пользователя
+	//  * @return список разрешенных объектов
+	//  */
+	// public Map<Long, String> getPermittedObjects(String userName);
 
-	/**
-	 * Назначение привилегий на объект для пользователя
-	 * 
-	 * @param userName имя пользователя
-	 * @param objectId ID объекта
-	 */
-	public void grantAccessToObject(String userName, Long objectId);
+	// /**
+	//  * Назначение привилегий на объект для пользователя
+	//  * 
+	//  * @param userName имя пользователя
+	//  * @param objectId ID объекта
+	//  */
+	// public void grantAccessToObject(String userName, Long objectId);
 
-	/**
-	 * Удаление привилегии на объект для пользователя
-	 * 
-	 * @param userName имя пользователя
-	 * @param objectId ID объекта
-	 */
-	public void revokeAccessFromObject(String userName, Long objectId);
+	// /**
+	//  * Удаление привилегии на объект для пользователя
+	//  * 
+	//  * @param userName имя пользователя
+	//  * @param objectId ID объекта
+	//  */
+	// public void revokeAccessFromObject(String userName, Long objectId);
 
-	/**
-	 * Удаляет объекты из таблицы users_access_map_table для указанного пользователя
-	 * 
-	 * @param userName имя пользователя
-	 */
-	public void clearUserAccessObjects(String userName);
+	// /**
+	//  * Удаляет объекты из таблицы users_access_map_table для указанного пользователя
+	//  * 
+	//  * @param userName имя пользователя
+	//  */
+	// public void clearUserAccessObjects(String userName);
 
 }

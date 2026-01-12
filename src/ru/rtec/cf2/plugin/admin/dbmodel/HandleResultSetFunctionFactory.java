@@ -26,8 +26,8 @@ public class HandleResultSetFunctionFactory {
 	/**
 	 * Необходимые объекты в БД
 	 */
-	private static final List<DBObjects> NECESSARY_DB_OBJECTS = 
-			Arrays.asList(DBObjects.values());
+	private static final List<AdminDBAttributes> NECESSARY_DB_OBJECTS = 
+			Arrays.asList(AdminDBAttributes.values());
 
 	/**
 	 * Логгер
@@ -52,20 +52,20 @@ public class HandleResultSetFunctionFactory {
 	public static Function<ResultSet, Boolean> checkValidSchemaFunction() {
 		return (rs) -> {
 			try {
-				List<String> necessuryDBObjects = NECESSARY_DB_OBJECTS.stream().map(Enum::name)
+				List<String> necessaryDBObjects = NECESSARY_DB_OBJECTS.stream().map(Enum::name)
 						.collect(Collectors.toList());
 
 				while(rs.next()) {
-					necessuryDBObjects.remove(rs.getString(1));
+					necessaryDBObjects.remove(rs.getString(1));
 				};
 
-				if (necessuryDBObjects.size() == 0) {
+				if (necessaryDBObjects.size() == 0) {
 					return true;
 				} else {
 					log.warn(resourceBundle.getString(
 							"AdminDBModelRepository_UncorrectAdministrationDB"));
 
-					log.warn("В схеме отсутствуют объекты: {}", necessuryDBObjects);
+					log.warn("В схеме отсутствуют объекты: {}", necessaryDBObjects);
 
 					return false;
 				}

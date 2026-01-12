@@ -10,23 +10,23 @@ WITH RECURSIVE rec AS (
 	) AND member NOT IN (
 		SELECT member 
 		FROM pg_auth_members 
-		WHERE roleid in (
+		WHERE roleid IN (
 			SELECT oid 
 			FROM pg_roles 
-			WHERE rolname = '%2$s'
+			WHERE rolname IN ('%2$s', '%3$s', '%4$s')
 		)
 	)
 	UNION 
 	SELECT m.roleid, m.member 
 	FROM pg_auth_members AS m 
 	JOIN rec ON rec.member = m.roleid 
-	where m.member not in (
+	WHERE m.member NOT IN (
 		SELECT member 
 		FROM pg_auth_members 
-		WHERE roleid in (
+		WHERE roleid IN (
 			SELECT oid 
 			FROM pg_roles 
-			WHERE rolname = '%2$s'
+			WHERE rolname IN ('%2$s', '%3$s', '%4$s')
 		)
 	)
 ) SELECT DISTINCT(u.usename) 
@@ -38,5 +38,4 @@ WITH RECURSIVE rec AS (
 		FROM information_schema.schemata 
 		WHERE schema_name = current_schema
 	) AND
-	u.usename != current_user
-	ORDER BY u.usename;
+	u.usename != current_user;
