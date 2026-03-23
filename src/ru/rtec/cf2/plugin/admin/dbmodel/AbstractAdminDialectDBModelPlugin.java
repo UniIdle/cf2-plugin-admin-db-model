@@ -2,13 +2,10 @@ package ru.rtec.cf2.plugin.admin.dbmodel;
 
 import ru.g4.utils.resources.IResourceBundleWrapper;
 import ru.rtec.cf2.IApplicationContext;
-import ru.rtec.cf2.ResourcesStorage;
 import ru.rtec.cf2.pi.ICompose;
 import ru.rtec.cf2.pi.IPlugin;
 import ru.rtec.cf2.pi.PluginVersion;
-import ru.rtec.cf2.plugin.model.objects.IConnectionStateListener;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
-import ru.rtec.cf2.plugin.admin.dbmodel.dialects.postgresql.AdminPostgreSQLDBModelPlugin;
 
 
 /**
@@ -18,8 +15,7 @@ public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICom
 	/**
 	 * Обертка для ResourceBundle
 	 */
-	private IResourceBundleWrapper resourceBundle = 
-			ResourcesStorage.getBundle(AdminPostgreSQLDBModelPlugin.class);
+	protected IResourceBundleWrapper resourceBundle;
 
 	/**
 	 * Контекст приложения
@@ -27,14 +23,10 @@ public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICom
 	private IApplicationContext context;
 
 	/**
-	 * Модуль реализующий интерфес по запросам к БД
+	 * Модуль реализующий интерфейс по запросам к БД
 	 */
-	public IAdminDBModelRepository dbRepository;
+	protected IAdminDBModelRepository dbRepository;
 
-	/**
-	* Слушатель события подключения/отключения к базе данных
-	*/
-	private IConnectionStateListener connectionDBListener;
 
 	/**
 	 * Конструктор
@@ -44,6 +36,10 @@ public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICom
 	}
 
 
+	protected void setResourceBundle(IResourceBundleWrapper resourceBundle) {
+		this.resourceBundle = resourceBundle;
+	}
+
 	@Override
 	public String getPackageNameAsPath() {
 		return "/" + getClass().getPackage().getName().replace(".", "/");
@@ -52,11 +48,6 @@ public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICom
 	@Override
 	public IAdminDBModelRepository getDBRepository() {
 		return this.dbRepository;
-	}
-
-	@Override
-	public void setConnectionDBListener(IConnectionStateListener connectionDBListener) {
-		this.connectionDBListener = connectionDBListener;
 	}
 
 	/**
@@ -96,10 +87,6 @@ public abstract class AbstractAdminDialectDBModelPlugin implements IPlugin, ICom
 	public void doCompose() {
 		IDBObjects dbModel = (IDBObjects) context.findPlugin(IDBObjects.class);
 		dbRepository.setDBModel(dbModel);
-
-		if (connectionDBListener != null) {
-			dbModel.addConnectionStateListener(connectionDBListener);
-		}
 	}
 
 }

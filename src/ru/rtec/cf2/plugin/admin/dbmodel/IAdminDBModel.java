@@ -1,7 +1,5 @@
 package ru.rtec.cf2.plugin.admin.dbmodel;
 
-import ru.rtec.cf2.plugin.model.objects.IConnectionStateListener;
-
 
 /**
  * Интерфейс для работы с ролевым доступом к объектам конфигуратора
@@ -19,9 +17,4 @@ public interface IAdminDBModel {
 	 */
 	public String getPackageNameAsPath();
 
-	/**
-	 * Устанавливает слушатель подключения/отключения к БД
-	 * @param connectionDBListener слушатель
-	 */
-	public void setConnectionDBListener(IConnectionStateListener connectionDBListener);
 }

@@ -2,6 +2,7 @@ package ru.rtec.cf2.plugin.admin.dbmodel;
 
 import java.util.List;
 import java.util.Map;
+
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
 
 
@@ -17,9 +18,16 @@ public interface IAdminDBModelRepository {
 	public void setDBModel(IDBObjects dbModel);
 
 	/**
+	 * Возвращает объектную модель текущей БД
+	 * 
+	 * @param dbModel ссылка на модель БД
+	 */
+	public IDBObjects getDBModel();
+
+	/**
 	 * Основной плагин, реализующий интерфейс {@link ru.rtec.cf2.plugin.admin.dbmodel.IAdminDBModel}, устанавливает путь к директории с SQL-скриптами
 	 * 
-	 * @param path путь до директории скриптов отностительно classpath
+	 * @param path путь до директории скриптов относительно classpath
 	 */
 	public void setSQLScriptsPath(String path);
 
@@ -33,14 +41,14 @@ public interface IAdminDBModelRepository {
 	/**
 	 * Проверяет целостность БД
 	 * 
-	 * @return булево значение в наличии ли все необходимы объекты БД для организации ролевого доступа
+	 * @return список объектов недостающих в БД для ролевого доступа
 	 */
-	public boolean isValidSchema();
+	public List<String> schemaValidation();
 
 	/**
-	 * Удаляет устаревшние строки из таблицы users_access_map_table
+	 * Удаляет устаревшие строки из таблицы users_access_map_table
 	 */
-	public void preprocDBObjects();
+	public void preprocessingDBObjects();
 
 	/**
 	 * Проверяет, является ли текущий пользователь "Владельцем"
@@ -57,25 +65,11 @@ public interface IAdminDBModelRepository {
 	public List<String> requestUserManagers();
 
 	/**
-	 * Возвращает список системных администраторов
+	 * Возвращает список пользователей по членству в роли
 	 * 
 	 * @return список пользователей
 	 */
-	public List<String> requestSysAdmins();
-
-	/**
-	 * Возвращает список администраторов безопасности
-	 * 
-	 * @return список пользователей
-	 */
-	public List<String> requestSecurityAdmins();
-
-	/**
-	 * Возвращает список всех пользователей конфигуратора кроме cf2_user_manager_role
-	 * 
-	 * @return список пользователей
-	 */
-	public List<String> requestUsersWithoutAdmins();
+	public List<String> requestUsersByRole(AdminDBRoles role) throws ADBMError;
 
 	/**
 	 * Удаляет пользователя конфигуратора оп его имени
@@ -85,7 +79,7 @@ public interface IAdminDBModelRepository {
 	public void deleteUser(String userName) throws ADBMError;
 
 	/**
-	 * Меняeт пароль для пользователя
+	 * Меняет пароль для пользователя
 	 * 
 	 * @param userName имя пользователя
 	 * @param newPassword новый пароль
@@ -93,7 +87,7 @@ public interface IAdminDBModelRepository {
 	public void changeUserPassword(String userName, String newPassword) throws ADBMError;
 
 	/**
-	 * Меняeт имя пользователя
+	 * Меняет имя пользователя
 	 * 
 	 * @param userName имя пользователя
 	 * @param newUserName новое имя пользователя
@@ -138,49 +132,118 @@ public interface IAdminDBModelRepository {
 	 */
 	public void revokePrivilege(String privilege, String userName);
 
-	// /**
-	//  * Получение имен всех корневых объектов
-	//  * 
-	//  * @return список имен объектов
-	//  */
-	// public Map<Long, String> getRootObjects();
+	/**
+	 * Получение списка типов доступных для конкретного пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @return список доступных типов
+	 */
+	public List<Long> getAccessTypesForUser(String userName);
 
-	// /**
-	//  * Получение списка доступных объектов
-	//  * 
-	//  * @return список доступных объектов
-	//  */
-	// public List<Long> getAccessObjects();
+	/**
+	 * Получение списка типов к которым выдан доступ
+	 * 
+	 * @param userName имя пользователя
+	 * @return список назначенных типов
+	 */
+	public List<Long> getPermittedTypesForUser(String userName);
 
-	// /**
-	//  * Получение списка объектов к которым выдан доступ
-	//  * 
-	//  * @param userName имя пользователя
-	//  * @return список разрешенных объектов
-	//  */
-	// public Map<Long, String> getPermittedObjects(String userName);
+	/**
+	 * Выдача доступа к типу для определенного пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param typeId id шаблона
+	 */
+	public void grantPermissionToType(String userName, Long typeId);
 
-	// /**
-	//  * Назначение привилегий на объект для пользователя
-	//  * 
-	//  * @param userName имя пользователя
-	//  * @param objectId ID объекта
-	//  */
-	// public void grantAccessToObject(String userName, Long objectId);
+	/**
+	 * Отзыв доступа к объекту для пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param typeId id шаблона
+	 */
+	public void revokePermissionFromType(String userName, Long typeId);
 
-	// /**
-	//  * Удаление привилегии на объект для пользователя
-	//  * 
-	//  * @param userName имя пользователя
-	//  * @param objectId ID объекта
-	//  */
-	// public void revokeAccessFromObject(String userName, Long objectId);
+	/**
+	 * Получение списка объектов доступных для редактирования конкретному пользователю
+	 * 
+	 * @param userName имя пользователя
+	 * @return список доступных объектов
+	 */
+	public List<Long> getAccessObjectsForUser(String userName);
 
-	// /**
-	//  * Удаляет объекты из таблицы users_access_map_table для указанного пользователя
-	//  * 
-	//  * @param userName имя пользователя
-	//  */
-	// public void clearUserAccessObjects(String userName);
+	/**
+	 * Получение списка объектов к которым выдан доступ
+	 * 
+	 * @param userName имя пользователя
+	 * @return список назначенных объектов
+	 */
+	public List<Long> getPermittedObjectsForUser(String userName);
+
+	/**
+	 * Получение списка объектов доступных для чтения конкретному пользователю
+	 * 
+	 * @param userName имя пользователя
+	 * @return список объектов для чтения
+	 */
+	public List<Long> getReadableObjectsForUser(String userName);
+
+	/**
+	 * Получение списка объектов назначенных для чтения конкретному пользователю
+	 * 
+	 * @param userName имя пользователя
+	 * @return список объектов для чтения
+	 */
+	public List<Long> getPermittedReadableObjectsForUser(String userName);
+
+	/**
+	 * Выдача доступа к объекту для определенного пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param objectId id объекта
+	 */
+	public void grantPermissionToObject(String userName, Long objectId);
+
+	/**
+	 * Выдача доступа чтения к объекту для определенного пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param objectId id объекта
+	 */
+	public void grantPermissionForReadingToObject(String userName, Long objectId);
+
+	/**
+	 * Отзыв доступа к объекту для пользователя
+	 * 
+	 * @param userName имя пользователя
+	 * @param objectId id объекта
+	 */
+	public void revokePermissionFromObject(String userName, Long objectId);
+
+	/**
+	 * Возвращает список заблокированных групп свойств
+	 * 
+	 * @return список заблокированных групп свойств
+	 */
+	public List<String> requestLockedPropertyGroups();
+
+	/**
+	 * Блокирует группу свойств
+	 * 
+	 * @param propertyGroupName имя блокируемой группы свойств
+	 */
+	public void lockPropertyGroup(String propertyGroupName);
+
+	/**
+	 * Снимает блокировку с группы свойств
+	 * 
+	 * @param propertyGroupName имя блокируемой группы свойств
+	 */
+	public void unlockPropertyGroup(String propertyGroupName);
+
+	/**
+	 * Возвращает отображение объектов и их типов
+	 */
+	public Map<Long, Long> requestObjectsTypes();
 
 }

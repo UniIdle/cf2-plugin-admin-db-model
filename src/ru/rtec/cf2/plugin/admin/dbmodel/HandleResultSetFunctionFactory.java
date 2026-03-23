@@ -9,14 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ru.g4.utils.log.LoggingUtils;
-import ru.g4.utils.resources.IResourceBundleWrapper;
-import ru.rtec.cf2.ResourcesStorage;
-import ru.rtec.cf2.plugin.admin.dbmodel.dialects.postgresql.AdminPostgreSQLDBModelPlugin;
 
 
 /**
@@ -26,8 +22,12 @@ public class HandleResultSetFunctionFactory {
 	/**
 	 * Необходимые объекты в БД
 	 */
-	private static final List<AdminDBAttributes> NECESSARY_DB_OBJECTS = 
-			Arrays.asList(AdminDBAttributes.values());
+	private static final List<Object> NECESSARY_DB_OBJECTS = new ArrayList<Object>() {{
+		addAll(Arrays.asList(AdminDBTables.values()));
+		addAll(Arrays.asList(AdminDBFunctions.values()));
+		addAll(Arrays.asList(AdminDBRoles.values()));
+	}};
+
 
 	/**
 	 * Логгер
@@ -35,11 +35,6 @@ public class HandleResultSetFunctionFactory {
 	protected static Logger log = 
 			LoggerFactory.getLogger(HandleResultSetFunctionFactory.class);
 
-	/**
-	 * Обертка для ResourceBundle
-	 */
-	private static IResourceBundleWrapper resourceBundle = 
-			ResourcesStorage.getBundle(AdminPostgreSQLDBModelPlugin.class);
 
 	/**
 	 * Конструктор
@@ -49,31 +44,22 @@ public class HandleResultSetFunctionFactory {
 	}
 
 
-	public static Function<ResultSet, Boolean> checkValidSchemaFunction() {
+	public static Function<ResultSet, List<String>> schemaValidationFunction() {
 		return (rs) -> {
-			try {
-				List<String> necessaryDBObjects = NECESSARY_DB_OBJECTS.stream().map(Enum::name)
-						.collect(Collectors.toList());
+			List<String> necessaryDBObjects = NECESSARY_DB_OBJECTS.stream().map(e -> e.toString())
+					.collect(Collectors.toList());
 
+			try {
 				while(rs.next()) {
 					necessaryDBObjects.remove(rs.getString(1));
 				};
 
-				if (necessaryDBObjects.size() == 0) {
-					return true;
-				} else {
-					log.warn(resourceBundle.getString(
-							"AdminDBModelRepository_UncorrectAdministrationDB"));
-
-					log.warn("В схеме отсутствуют объекты: {}", necessaryDBObjects);
-
-					return false;
-				}
+				return necessaryDBObjects;
 			} catch (SQLException e) {
 				log.warn(e.getMessage());
 				log.error(LoggingUtils.dumpThrowable(e));
 
-				return false;
+				return necessaryDBObjects;
 			}
 		};
 	}
@@ -140,6 +126,25 @@ public class HandleResultSetFunctionFactory {
 			try {
 				while(rs.next()) {
 					result.put(rs.getLong(1), rs.getString(2));
+				}
+
+				return result;
+			} catch (SQLException e) {
+				log.info(e.getMessage());
+				log.error(LoggingUtils.dumpThrowable(e));
+
+				return result;
+			}
+		};
+	}
+
+	public static Function<ResultSet, Map<Long, Long>> getLongLongMapResultFunction() {
+		return (rs) -> {
+			Map<Long, Long> result = new HashMap<>();
+
+			try {
+				while(rs.next()) {
+					result.put(rs.getLong(1), rs.getLong(2));
 				}
 
 				return result;

@@ -1,5 +1,8 @@
-/* Скрипт получения списка пользователей, кроме пользователей-администраторов:
-	"Админ пользователей", "Админ безопасности", "Системный администратор" */
+/* Скрипт возвращает список пользователей, являющихся членами определенной групповой роли.
+ВАЖНО!!!
+1. Запрос не может быть выполнен для роли cf2_user_manager_role 
+2. Текущий пользователь, вызвавший исполнение скрипта, в список не попадает
+*/
 
 WITH RECURSIVE rec AS ( 
 	SELECT roleid, member 
@@ -14,7 +17,7 @@ WITH RECURSIVE rec AS (
 		WHERE roleid IN (
 			SELECT oid 
 			FROM pg_roles 
-			WHERE rolname IN ('%2$s', '%3$s', '%4$s')
+			WHERE rolname = '%2$s'
 		)
 	)
 	UNION 
@@ -27,7 +30,7 @@ WITH RECURSIVE rec AS (
 		WHERE roleid IN (
 			SELECT oid 
 			FROM pg_roles 
-			WHERE rolname IN ('%2$s', '%3$s', '%4$s')
+			WHERE rolname = '%2$s'
 		)
 	)
 ) SELECT DISTINCT(u.usename) 

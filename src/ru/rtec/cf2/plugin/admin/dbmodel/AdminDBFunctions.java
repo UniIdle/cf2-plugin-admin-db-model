@@ -1,0 +1,28 @@
+package ru.rtec.cf2.plugin.admin.dbmodel;
+
+
+/**
+ * Перечисление процедур в БД для администрирования в CF2
+ */
+public enum AdminDBFunctions {
+	check_accessible_class_for_session_user_function,
+	check_accessible_class_for_user_function,
+	check_accessible_parent_class_function,
+	check_accessible_class_parameters_function,
+	check_accessible_class_property_groups_function,
+	check_accessible_class_parameter_property_groups_function,
+	check_accessible_property_group_function,
+	// check_accessible_for_linking_object_function,
+	// check_class_parameter_function,
+	check_writeable_object_for_session_user_function,
+	check_writeable_object_for_user_function,
+	check_writeable_parent_object_function,
+	check_writeable_object_parameter_property_groups_function,
+	check_readable_object_for_session_user_function,
+	check_readable_object_for_user_function,
+	check_readable_object_property_groups_function,
+	check_object_parameter_function,
+	check_o2o_link_function,
+	check_o2p_link_function,
+	check_p2p_link_function
+}

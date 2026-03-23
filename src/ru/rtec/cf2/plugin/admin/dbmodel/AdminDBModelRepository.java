@@ -7,15 +7,15 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import ru.g4.utils.log.LoggingUtils;
 import ru.g4.utils.resources.IResourceBundleWrapper;
-import ru.rtec.cf2.ResourcesStorage;
 import ru.rtec.cf2.plugin.model.objects.IDBObjects;
-import ru.rtec.cf2.plugin.admin.dbmodel.dialects.postgresql.AdminPostgreSQLDBModelPlugin;
 import ru.rtec.cf2.plugin.admin.dbmodel.util.SQLScriptReader;
 
 
@@ -31,19 +31,19 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	/**
 	 * Обертка для ResourceBundle
 	 */
-	private IResourceBundleWrapper resourceBundle = 
-			ResourcesStorage.getBundle(AdminPostgreSQLDBModelPlugin.class);
+	private IResourceBundleWrapper resourceBundle;
 
 	/**
-	 * Сссылка на модуль модели объектов. Ему в случае удачного подключения
+	 * Ссылка на модуль модели объектов. Ему в случае удачного подключения
 	 * отдается ссылка на фабрику сессий
 	 */
-	IDBObjects dbModel;
+	private IDBObjects dbModel;
 
 	/**
 	 * Модуль читающий SQL-скрипты из файлов
 	 */
-	SQLScriptReader reader;
+	private SQLScriptReader reader;
+
 
 	/**
 	 * Конструктор
@@ -53,6 +53,10 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 
+	public void setResourceBundle(IResourceBundleWrapper resourceBundle) {
+		this.resourceBundle = resourceBundle;
+	}
+
 	@Override
 	public void setSQLScriptsPath(String path) {
 		this.reader = new SQLScriptReader(String.format("%s/", path));
@@ -61,6 +65,11 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public void setDBModel(IDBObjects dbModel) {
 		this.dbModel = dbModel;
+	}
+
+	@Override
+	public IDBObjects getDBModel() {
+		return this.dbModel;
 	}
 
 	@Override
@@ -87,8 +96,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 		} catch (HibernateException e) {
 			log.warn(e.getMessage());
 			log.error(LoggingUtils.dumpThrowable(e));
-			throw new ADBMError(e.getMessage());
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			log.warn(ex.getMessage());
 			log.error(LoggingUtils.dumpThrowable(ex));
 		}
@@ -97,16 +105,21 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	}
 
 	@Override
-	public boolean isValidSchema() {
-		return (boolean) queryShell("check_db.sql", 
-				HandleResultSetFunctionFactory.checkValidSchemaFunction(), 
-				(Object[]) AdminDBAttributes.values());
+	public List<String> schemaValidation() {
+		List<Object> necessaryObjects = new ArrayList<>();
+		necessaryObjects.addAll(Arrays.asList(AdminDBTables.values()));
+		necessaryObjects.addAll(Arrays.asList(AdminDBFunctions.values()));
+		necessaryObjects.addAll(Arrays.asList(AdminDBRoles.values()));
+
+		return (List<String>) queryShell("check_db.sql", 
+				HandleResultSetFunctionFactory.schemaValidationFunction(), 
+				necessaryObjects.toArray());
 	}
 
 	@Override 
-	public void preprocDBObjects() {
+	public void preprocessingDBObjects() {
 		queryShell("clear_empty_objects_and_types.sql", null, 
-				AdminDBAttributes.classes_access_table, AdminDBAttributes.object_access_table);
+				AdminDBTables.classes_access_table, AdminDBTables.object_access_table);
 	}
 
 	@Override
@@ -119,36 +132,25 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	public List<String> requestUserManagers() {
 		return (List<String>) queryShell("get_user_managers.sql", 
 				HandleResultSetFunctionFactory.getStringListResultFunction(), 
-				AdminDBAttributes.cf2_user_manager_role);
+				AdminDBRoles.cf2_user_manager_role);
 	}
 
 	@Override
-	public List<String> requestSysAdmins() {
-		return (List<String>) queryShell("get_sys_admins.sql", 
-				HandleResultSetFunctionFactory.getStringListResultFunction(), 
-				AdminDBAttributes.cf2_sys_admin_role, AdminDBAttributes.cf2_user_manager_role);
-	}
+	public List<String> requestUsersByRole(AdminDBRoles role) throws ADBMError {
+		if (role.equals(AdminDBRoles.cf2_user_manager_role)) {
+			throw new ADBMError(resourceBundle.getString("InaccessibleUserManagersRequest"));
+		}
 
-	@Override
-	public List<String> requestSecurityAdmins() {
-		return (List<String>) queryShell("get_security_admins.sql", 
+		return (List<String>) queryShell("get_users_by_role.sql", 
 				HandleResultSetFunctionFactory.getStringListResultFunction(), 
-				AdminDBAttributes.cf2_security_admin_role, AdminDBAttributes.cf2_user_manager_role);
-	}
-
-	@Override
-	public List<String> requestUsersWithoutAdmins() {
-		return (List<String>) queryShell("get_users_without_admins.sql", 
-				HandleResultSetFunctionFactory.getStringListResultFunction(), 
-				AdminDBAttributes.cf2_base_user_role, AdminDBAttributes.cf2_user_manager_role, 
-				AdminDBAttributes.cf2_sys_admin_role, AdminDBAttributes.cf2_security_admin_role);
+				role, AdminDBRoles.cf2_user_manager_role);
 	}
 
 	@Override
 	public void deleteUser(String userName) throws ADBMError {
 		queryShell("delete_user.sql", null, 
-				userName, AdminDBAttributes.cf2_user_manager_role, AdminDBAttributes.classes_access_table, 
-				AdminDBAttributes.object_access_table);
+				userName, AdminDBRoles.cf2_user_manager_role, AdminDBTables.classes_access_table, 
+				AdminDBTables.object_access_table);
 
 		log.info(resourceBundle.getStringFormat("SuccessDeleteUser_Message", userName));
 	}
@@ -156,7 +158,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public void changeUserPassword(String userName, String newPassword) throws ADBMError {
 		queryShell("change_pass.sql",null, 
-				userName, newPassword, AdminDBAttributes.cf2_user_manager_role);
+				userName, newPassword, AdminDBRoles.cf2_user_manager_role);
 
 		log.info(resourceBundle.getString("SuccessChangePassowrd_Message"));
 	}
@@ -164,7 +166,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public void changeUserName(String userName, String newUserName) throws ADBMError {
 		queryShell("change_username.sql",null, 
-				userName, newUserName, AdminDBAttributes.cf2_user_manager_role);
+				userName, newUserName, AdminDBRoles.cf2_user_manager_role);
 
 		log.info(resourceBundle.getString("SuccessChangeUsername_Message"));
 	}
@@ -172,7 +174,7 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	@Override
 	public void createUser(String userName, String password) throws ADBMError {
 		queryShell("create_user.sql", null, 
-				userName, password, AdminDBAttributes.cf2_base_user_role, AdminDBAttributes.cf2_user_manager_role);
+				userName, password, AdminDBRoles.cf2_base_user_role, AdminDBRoles.cf2_user_manager_role);
 
 		log.info(resourceBundle.getStringFormat("SuccessCreateUser_Message", userName));
 	}
@@ -187,57 +189,131 @@ public class AdminDBModelRepository implements IAdminDBModelRepository {
 	public List<String> getUserRoles(String userName) {
 		return (List<String>) queryShell("get_roles_by_username.sql", 
 				HandleResultSetFunctionFactory.getStringListResultFunction(), 
-				userName, AdminDBAttributes.cf2_base_user_role);
+				userName, AdminDBRoles.cf2_base_user_role);
 	}
 
 	@Override
 	public void grantPrivilege(String privilege, String userName) {
 		queryShell("grant_privilege.sql", null, 
-				privilege, userName, AdminDBAttributes.cf2_user_manager_role);
+				privilege, userName, AdminDBRoles.cf2_user_manager_role);
 	}
 
 	@Override
 	public void revokePrivilege(String privilege, String userName) {
 		queryShell("revoke_privilege.sql", null, 
-				privilege, userName, AdminDBAttributes.cf2_user_manager_role);
+				privilege, userName, AdminDBRoles.cf2_user_manager_role);
 	}
 
-	// @Override
-	// public Map<Long, String> getRootObjects() {
-	// 	return (Map<Long, String>) queryShell("get_root_objects.sql", 
-	// 			HandleResultSetFunctionFactory.getLongStringMapResultFunction());
-	// }
+	@Override
+	public List<Long> getAccessTypesForUser(String userName) {
+		return (List<Long>) queryShell("get_access_types.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				userName, AdminDBFunctions.check_accessible_class_for_user_function);
+	}
 
-	// @Override
-	// public List<Long> getAccessObjects() {
-	// 	return (List<Long>) queryShell("get_access_objects.sql", 
-	// 			HandleResultSetFunctionFactory.getLongListResultFunction(), 
-	// 			AdminDBAttributes.check_access_function);
-	// }
+	@Override
+	public List<Long> getPermittedTypesForUser(String userName) {
+		return (List<Long>) queryShell("get_permitted_types.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				userName, AdminDBTables.classes_access_table);
+	}
 
-	// @Override
-	// public Map<Long, String> getPermittedObjects(String userName) {
-	// 	return (Map<Long, String>) queryShell("get_access_root_objects.sql", 
-	// 			HandleResultSetFunctionFactory.getLongStringMapResultFunction(), 
-	// 			userName, AdminDBAttributes.users_access_map_table);
-	// }
+	@Override
+	public void grantPermissionToType(String userName, Long typeId) {
+		queryShell("grant_permission_to_type.sql", null, 
+				userName, typeId, AdminDBTables.classes_access_table,
+			AdminDBFunctions.check_accessible_class_for_user_function);
+	}
 
-	// @Override
-	// public void grantAccessToObject(String userName, Long objectId) {
-	// 	queryShell("grant_access_to_object.sql", null, 
-	// 			userName, String.valueOf(objectId), AdminDBAttributes.users_access_map_table);
-	// }
-	
-	// @Override
-	// public void revokeAccessFromObject(String userName, Long objectId) {
-	// 	queryShell("revoke_access_from_object.sql", null, 
-	// 			userName, String.valueOf(objectId), AdminDBAttributes.users_access_map_table);
-	// }
+	@Override
+	public void revokePermissionFromType(String userName, Long typeId) {
+		queryShell("revoke_permission_from_type.sql", null,
+				userName, typeId, AdminDBTables.classes_access_table);
+	}
 
-	// @Override
-	// public void clearUserAccessObjects(String userName) {
-	// 	queryShell("clear_access_objects.sql", null, 
-	// 			userName, AdminDBAttributes.users_access_map_table);
-	// }
+	@Override
+	public List<Long> getAccessObjectsForUser(String userName) {
+		return (List<Long>) queryShell("get_access_objects.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				userName, AdminDBFunctions.check_writeable_object_for_user_function);
+	}
+
+	@Override
+	public List<Long> getPermittedObjectsForUser(String userName) {
+		return (List<Long>) queryShell("get_permitted_objects.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				userName, AdminDBTables.object_access_table);
+	}
+
+	@Override
+	public List<Long> getReadableObjectsForUser(String userName) {
+		return (List<Long>) queryShell("get_readable_objects.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				userName, AdminDBFunctions.check_readable_object_for_user_function);
+	}
+
+	@Override
+	public List<Long> getPermittedReadableObjectsForUser(String userName) {
+		return (List<Long>) queryShell("get_permitted_readable_objects.sql", 
+				HandleResultSetFunctionFactory.getLongListResultFunction(), 
+				userName, AdminDBTables.object_access_table);
+	}
+
+	@Override
+	public void grantPermissionToObject(String userName, Long objectId) {
+		queryShell("grant_permission_to_object.sql", null, 
+				userName, objectId, AdminDBTables.object_access_table);
+	}
+
+	@Override
+	public void grantPermissionForReadingToObject(String userName, Long objectId) {
+		queryShell("grant_readable_permission_to_object.sql", null, 
+				userName, objectId, AdminDBTables.object_access_table);
+	}
+
+	@Override
+	public void revokePermissionFromObject(String userName, Long objectId) {
+		queryShell("revoke_permission_from_object.sql", null,
+				userName, objectId, AdminDBTables.object_access_table);
+	}
+
+	/**
+	 * Возвращает список заблокированных групп свойств
+	 * 
+	 * @return список заблокированных групп свойств
+	 */
+	public List<String> requestLockedPropertyGroups() {
+		return (List<String>) queryShell("get_locked_pg.sql", 
+				HandleResultSetFunctionFactory.getStringListResultFunction(), 
+				AdminDBTables.property_groups_access_table);
+	}
+
+	/**
+	 * Блокирует группу свойств
+	 * 
+	 * @param propertyGroupName имя блокируемой группы свойств
+	 */
+	public void lockPropertyGroup(String propertyGroupName) {
+		queryShell("lock_pg.sql", null,
+				propertyGroupName, AdminDBTables.property_groups_access_table);
+	}
+
+	/**
+	 * Снимает блокировку с группы свойств
+	 * 
+	 * @param propertyGroupName имя блокируемой группы свойств
+	 */
+	public void unlockPropertyGroup(String propertyGroupName) {
+		queryShell("unlock_pg.sql", null,
+				propertyGroupName, AdminDBTables.property_groups_access_table);
+	}
+
+	/**
+	 * Возвращает отображение объектов и их типов
+	 */
+	public Map<Long, Long> requestObjectsTypes() {
+		return (Map<Long, Long>) queryShell("get_objects_types.sql", 
+				HandleResultSetFunctionFactory.getLongLongMapResultFunction());
+	}
 
 }
