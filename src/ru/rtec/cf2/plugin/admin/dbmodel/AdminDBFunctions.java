@@ -13,7 +13,7 @@ public enum AdminDBFunctions {
 	check_accessible_class_parameter_property_groups_function,
 	check_accessible_property_group_function,
 	// check_accessible_for_linking_object_function,
-	// check_class_parameter_function,
+	check_class_parameter_function,
 	check_writeable_object_for_session_user_function,
 	check_writeable_object_for_user_function,
 	check_writeable_parent_object_function,

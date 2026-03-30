@@ -6,7 +6,7 @@ SELECT p.proname
 FROM pg_proc p 
 JOIN pg_namespace n ON p.pronamespace = n.oid 
 WHERE n.nspname = current_schema AND 
-	p.proname IN ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') 
+	p.proname IN ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') 
 UNION 
 SELECT rolname 
 FROM pg_roles 
